@@ -36,7 +36,7 @@ class BasePath :
         self.folders = {"raw" : Path(raw_folder),
                         "graph" : Path(graph_folder)}
         
-        self.graph = graph_folder / subject_id / tree_graph / f"{subject_id}.arg" #Always the same structure of name
+        self.graph = graph_folder / subject_id / tree_graph / f"R{subject_id}.arg" #Always the same structure of name
         self.raw = raw_folder / subject_id / tree_raw / f"{subject_id}{nomenclature_raw}"
 
         self._validate_path()
