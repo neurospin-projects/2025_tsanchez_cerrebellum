@@ -54,6 +54,65 @@ class BasePath :
     
     def __repr__(self):
         return f"Paths({self.id})"
+
         
+class SubjectPath(BasePath) :
+    def __init__(self,
+                 subject_id : str,
+                 graph_folder : Union[str, Path],
+                 tree_graph : Union[str, Path],
+                 raw_folder : Union[str, Path],
+                 tree_raw : Union[str, Path],
+                 nomenclature_raw : str,
+                 saving_folder: Union[str, Path]
+                 ):
+        # Init the base folder
+        super().__init__(subject_id, graph_folder, tree_graph, raw_folder , tree_raw, nomenclature_raw)
+
+        NATIVE_FOLDER = "native"
+        ICBM2009_FOLDER = "ICBM2009c"
+        CROP_FOLDER = "crop"
+
+        # TODO : Add reports for the transform with the matrix that is used to register from native 
+
+        # Path where all the data is saved
+        self.save = Path(saving_folder) / self.id
+
+        # File in the native space
+        self.mc = self.save / NATIVE_FOLDER / f"{self.id}_mean_curvature.nii.gz"
+        self.thresh = self.save / NATIVE_FOLDER / f"{self.id}_thresh_native.nii.gz"
+        self.white_matter_native = self.save / NATIVE_FOLDER / f"{self.id}_white_matter_native.nii.gz"
+        self.sulci_native = self.save / NATIVE_FOLDER / f"{self.id}_sulci_native.nii.gz"
+
+        # File in the ICBM2009 space
+        self.thresh_ICBM = self.save / ICBM2009_FOLDER / f"{self.id}_thresh_icbm2009.nii.gz"
+        self.white_matter_ICBM = self.save / ICBM2009_FOLDER / f"{self.id}_white_matter_icbm2009.nii.gz"
+        self.sulci_ICBM = self.save / ICBM2009_FOLDER / f"{self.id}_sulci_icbm2009.nii.gz"
+
+        # Cropped files : 
+        self.thresh_crop = self.save / CROP_FOLDER / f"{self.id}_crop_tresh.nii.gz"
+        self.white_matter_crop = self.save / CROP_FOLDER / f"{self.id}_crop_white_matter.nii.gz"
+        self.sulci_crop = self.save / CROP_FOLDER / f"{self.id}_crop_sulci.nii.gz"
+
+
+class MaskPath(BasePath):
+    def __init__(self,
+                subject_id,
+                graph_folder,
+                tree_graph,
+                raw_folder,
+                tree_raw,
+                nomenclature_raw, 
+                mask_type : str ,
+                saving_path : Union[str, Path]
+                ):
+        super().__init__(subject_id, graph_folder, tree_graph, raw_folder, tree_raw, nomenclature_raw)
+
+        self.save = saving_path #Folder to save the files
+        self.type = mask_type #Mask type 
+
+        self.native = self.save / self.type / f"{self.id}_{self.type}_native.nii.gz"
+        self.icbm2009 = self.save / self.type / f"{self.id}_{self.type}_ICBM2009c.nii.gz"
+
         
-    
+        # TODO : Add reports for the transform with the matrix that is used to register from native 
