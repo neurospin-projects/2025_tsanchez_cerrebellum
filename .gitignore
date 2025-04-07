@@ -1,1 +1,3 @@
-Runs/01_threshold/Program/deep_folding
+**/deep_folding/
+**/__pycache__/
+*/**/cerebellum_folding
