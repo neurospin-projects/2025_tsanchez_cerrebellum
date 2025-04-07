@@ -89,6 +89,13 @@ def only_mask_cerebellum(vol) -> None :
     vol_np[cerebellum] = 1
     vol_np[rest] = 0
 
+def mask_cerebellum_from_file(mask_path : MaskPath, to_save : bool = False) -> None:
+    obj = aims.read(filename=str(mask_path.raw))
+    only_mask_cerebellum(obj)
+    if to_save :
+        print(f"Saving mask to : {mask_path.native}")
+        aims.write(obj, filename=str(mask_path.native))
+
 
 DILATATION = 5 #mm
 
