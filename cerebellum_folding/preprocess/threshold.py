@@ -47,27 +47,36 @@ def get_ICBM2009c_transform(graph_path) :
 RESAMPLE_VALUES = [0, -1, 1]
 OUTPUT_VOXEL_SIZE = (1,1,1)
 
-def transform_ICBM2009c(paths : SubjectPath, resample_values = RESAMPLE_VALUES, output_voxel = OUTPUT_VOXEL_SIZE ,  save : bool = False, verbose : bool = False) : 
+def transform_ICBM2009c(path : Path,
+                        graph_path : Path,
+                        saving_path : Path,
+                        do_skel : bool,
+                        immortals : list,
+                        resample_values = RESAMPLE_VALUES,
+                        output_voxel = OUTPUT_VOXEL_SIZE ,
+                        save : bool = False,
+                        verbose : bool = False
+                        ) : 
 
-    native_obj = aims.read(str(paths.thresh))
-    # c = aims.Converter(intype=native_obj, outtype=aims.Volume('S16'))
-    # native_obj = c(native_obj)
+    native_obj = aims.read(str(path))
+    c = aims.Converter(intype=native_obj, outtype=aims.Volume('S16'))
+    native_obj = c(native_obj)
 
     # Apply transform
-    transf = get_ICBM2009c_transform(paths.graph)
+    transf = get_ICBM2009c_transform(graph_path)
     resampled_to_ICBM2009c = resample(
         input_image=native_obj, 
         transformation=transf,
         output_vs=output_voxel,
+        do_skel = do_skel,
+        immortals=immortals,
         background=0,
         values= resample_values,
         verbose=verbose
     )
 
     if save : 
-        aims.write(resampled_to_ICBM2009c, filename=str(paths.ICBM2009c))
-
-    return resampled_to_ICBM2009c
+        aims.write(resampled_to_ICBM2009c, filename=str(saving_path))
 
 
 # Function to retrieve the cerebellum only in Clara Fisher's masks (cf. Ataxia)
