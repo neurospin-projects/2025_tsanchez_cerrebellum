@@ -114,7 +114,7 @@ def get_binary_val(thresh_path : Union[Path, str], to_isolate : str , saving_pat
 
     # ! To validate
     # Value corresponding the the encoding in the MC Thresholded
-    val = -1 if to_isolate == "sulci" else 1
+    val = 1 if to_isolate == "sulci" else -1
 
     thresh_vol = aims.read(str(thresh_path))
     thresh_np = thresh_vol.np
