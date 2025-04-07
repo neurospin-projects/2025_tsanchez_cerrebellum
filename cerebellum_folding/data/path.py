@@ -119,6 +119,7 @@ class MaskPath(BasePath):
         self.type = mask_type #Mask type 
 
         self.native = self.save / self.type / f"{self.id}_{self.type}_native.nii.gz"
+        self.dilated = self.save / self.type / f"{self.id}_{self.type}_native_dilatation.nii.gz"
         self.icbm2009 = self.save / self.type / f"{self.id}_{self.type}_ICBM2009c.nii.gz"
 
         
