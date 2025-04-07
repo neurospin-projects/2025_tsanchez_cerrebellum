@@ -126,7 +126,7 @@ def get_binary_val(thresh_path : Union[Path, str], to_isolate : str , saving_pat
     thresh_np[~mask] = 0
 
     if to_save : 
-        aims.write(thresh_vol, saving_path)
+        aims.write(thresh_vol, str(saving_path))
 
 
 def full_pipe_subject(subject_path : SubjectPath) : 
