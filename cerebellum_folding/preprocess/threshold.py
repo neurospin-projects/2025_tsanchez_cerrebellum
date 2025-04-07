@@ -128,6 +128,27 @@ def get_binary_val(thresh_path : Union[Path, str], to_isolate : str , saving_pat
     if to_save : 
         aims.write(thresh_vol, str(saving_path))
 
+def apply_mask(path : Path,
+               mask_path : Path,
+               saving_path : Path,
+               to_save : bool  = False,
+               ):
+    # Reading objects
+    obj = aims.read(str(path))
+    mask = aims.read(str(mask_path))
+
+    # Convert mask to bool
+    mask_bool = np.where(mask.np == 1, True, False)
+
+    # Apply mask
+    obj.np[~mask_bool] = 0
+
+    if to_save :
+        print(f"Saving at : {saving_path}")
+        aims.write(obj, filename=str(saving_path))
+
+
+
 
 def full_pipe_subject(subject_path : SubjectPath) : 
     pass
