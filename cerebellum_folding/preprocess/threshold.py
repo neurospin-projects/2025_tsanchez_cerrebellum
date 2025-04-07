@@ -4,7 +4,7 @@ from typing import Union
 import numpy as np
 from soma import aims
 
-from cerebellum_folding.data.path import SubjectPath
+from cerebellum_folding.data.path import SubjectPath, MaskPath
 from deep_folding.brainvisa.utils.resample import resample
 import deep_folding.brainvisa.utils.dilate_mask as dl 
 
