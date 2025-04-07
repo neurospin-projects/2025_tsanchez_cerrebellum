@@ -85,9 +85,16 @@ class SubjectPath(BasePath) :
         self.sulci_native = self.save / NATIVE_FOLDER / f"{self.id}_sulci_native.nii.gz"
 
         # File in the ICBM2009 space
+
+        #Without skel
         self.thresh_ICBM = self.save / ICBM2009_FOLDER / f"{self.id}_thresh_icbm2009.nii.gz"
         self.white_matter_ICBM = self.save / ICBM2009_FOLDER / f"{self.id}_white_matter_icbm2009.nii.gz"
         self.sulci_ICBM = self.save / ICBM2009_FOLDER / f"{self.id}_sulci_icbm2009.nii.gz"
+
+        #With skel
+        self.thresh_wSkel_ICBM = self.save / ICBM2009_FOLDER / f"{self.id}_thresh_wSkel_icbm2009.nii.gz"
+        self.white_matter_wSkel_ICBM = self.save / ICBM2009_FOLDER / f"{self.id}_white_matter_wSkel_icbm2009.nii.gz"
+        self.sulci_wSkel_ICBM = self.save / ICBM2009_FOLDER / f"{self.id}_sulci_wSkel_icbm2009.nii.gz"
 
         # Cropped files : 
         self.thresh_crop = self.save / CROP_FOLDER / f"{self.id}_crop_tresh.nii.gz"
