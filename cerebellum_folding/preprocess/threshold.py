@@ -99,10 +99,14 @@ def mask_cerebellum_from_file(mask_path : MaskPath, to_save : bool = False) -> N
 
 DILATATION = 5 #mm
 
-def dilatate_mask(mask, saving_path, dilatation : int = DILATATION, save : bool = False,):
+def dilatate_mask(mask_path : MaskPath, dilatation : int = DILATATION, to_save : bool = False,):
+    mask = aims.read(str(mask_path.native))
     dilated_mask = dl.dilate(mask, radius=dilatation)
-    if save :
-        aims.write(dilated_mask, filename = saving_path)
+    if to_save :
+        print(f"Saving to {mask_path.dilated}")
+        aims.write(dilated_mask, filename = str(mask_path.dilated))
+
+
 
 def get_binary_val(thresh_path : Union[Path, str], to_isolate : str , saving_path : Union[Path, str], to_save : bool = False):
 
