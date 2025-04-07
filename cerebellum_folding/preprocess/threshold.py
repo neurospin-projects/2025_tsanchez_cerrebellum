@@ -29,8 +29,8 @@ def threshold_mean_curv(subject_path : SubjectPath, to_save : bool = False, whit
     vol[rest] = 0
 
     # Convert from float type to S16 more convinient
-    conv = aims.Converter(intype=vol, outtype=aims.Volume("S16")) 
-    vol = conv(vol)
+    conv = aims.Converter(intype=obj, outtype=aims.Volume("S16")) 
+    vol = conv(obj)
 
     if to_save : 
         print(f"Saving to {subject_path.thresh}")
