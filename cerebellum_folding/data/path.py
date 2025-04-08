@@ -97,9 +97,14 @@ class SubjectPath(BasePath) :
         self.sulci_wSkel_ICBM = self.save / ICBM2009_FOLDER / f"{self.id}_sulci_wSkel_icbm2009.nii.gz"
 
         # Cropped files : 
-        self.thresh_crop = self.save / CROP_FOLDER / f"{self.id}_crop_tresh.nii.gz"
-        self.white_matter_crop = self.save / CROP_FOLDER / f"{self.id}_crop_white_matter.nii.gz"
-        self.sulci_crop = self.save / CROP_FOLDER / f"{self.id}_crop_sulci.nii.gz"
+        self.thresh_crop_cerebellum = self.save / CROP_FOLDER / f"{self.id}_crop_tresh_cerebellum.nii.gz"
+        self.white_matter_crop_cerebellum = self.save / CROP_FOLDER / f"{self.id}_crop_white_matter_cerebellum.nii.gz"
+        self.sulci_crop_cerebellum = self.save / CROP_FOLDER / f"{self.id}_crop_sulci_cerebellum.nii.gz"
+
+        # Cropped files : 
+        self.thresh_crop_vermis = self.save / CROP_FOLDER / f"{self.id}_crop_tresh_vermis.nii.gz"
+        self.white_matter_crop_vermis = self.save / CROP_FOLDER / f"{self.id}_crop_white_matter_vermis.nii.gz"
+        self.sulci_crop_vermis = self.save / CROP_FOLDER / f"{self.id}_crop_sulci_vermis.nii.gz"
 
 
 class MaskPath(BasePath):
