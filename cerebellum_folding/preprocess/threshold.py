@@ -1,5 +1,5 @@
 from pathlib import Path
-from typing import Union
+from typing import Union, List
 
 import numpy as np
 from soma import aims
@@ -79,19 +79,24 @@ def transform_ICBM2009c(path : Path,
         aims.write(resampled_to_ICBM2009c, filename=str(saving_path))
 
 
-# Function to retrieve the cerebellum only in Clara Fisher's masks (cf. Ataxia)
-def only_mask_cerebellum(vol) -> None :
+# Cheatsheet for the strutures of the cerebellum using Clara's Masks : 
+#     - Cerebellum : [1,2,3] 
+#     - Hemisphere : [1,2]
+#     - Vermis : [3]
+
+def retrieve_structure_mask(vol, list_to_mask : List,):
     vol_np = vol.np
 
-    cerebellum = np.isin(vol_np, [1,2,3])
-    rest = np.isin(vol_np, [0,5,6,7,8])
+    to_keep = np.isin(vol_np, list_to_mask)
+    vol_np[to_keep] = 1
+    vol_np[~to_keep] = 0
 
-    vol_np[cerebellum] = 1
-    vol_np[rest] = 0
+def mask_from_file(mask_path : MaskPath,list_to_mask : List, to_save : bool = False) -> None:
 
-def mask_cerebellum_from_file(mask_path : MaskPath, to_save : bool = False) -> None:
     obj = aims.read(filename=str(mask_path.raw))
-    only_mask_cerebellum(obj)
+
+    retrieve_structure_mask(obj, list_to_mask=list_to_mask)
+
     if to_save :
         print(f"Saving mask to : {mask_path.native}")
         aims.write(obj, filename=str(mask_path.native))
