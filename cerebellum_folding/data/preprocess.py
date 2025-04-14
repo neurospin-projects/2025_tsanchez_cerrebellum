@@ -172,6 +172,25 @@ class PipelineSubject :
         aims.write(resampled, filename = str(self.path.icbm["resampled_icbm"]))
         header["voxel_size"][:3] = [1,1,1]
 
+    def compute_mean_curvature(self, sigma : float = 1, overwrite : bool = False):
+
+        if check_file(self.path.icbm["mean_curvature"]):
+            if not overwrite : 
+                raise Exception("File already exists")
+            else : 
+                self.print(f"Overwriting : {self.path.icbm['mean_curvature']} ") 
+        
+        CMD_MEAN_CURV = ["VipGeometry",
+                "-m", "mc",
+                "-s", f"{sigma}", 
+                "-i", self.path.icbm["resampled_icbm"],
+                "-o", self.path.icbm["mean_curvature"]
+                ]
+
+        output = sp.run(CMD_MEAN_CURV, capture_output=True)
+        self.print(output)
+        self.print(f"Saving {self.path.icbm['mean_curvature']}")
+
     def _apply_mask(self,
                     source_path : Path,
                     saving_path : Path,
