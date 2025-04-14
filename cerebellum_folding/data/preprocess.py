@@ -195,14 +195,16 @@ class PipelineSubject :
                     source_path : Path,
                     saving_path : Path,
                     mask_path : Path,
+                    dilatation : int,
                     ): 
         
         # Reading objects
         obj = aims.read(str(source_path))
         mask = aims.read(str(mask_path))
+        dilated_mask = dl.dilate(mask, radius=dilatation)
 
         # Convert mask to bool
-        mask_bool = np.where(mask.np == 1, True, False)
+        mask_bool = np.where(dilated_mask.np == 1, True, False)
 
         # Apply mask
         obj.np[~mask_bool] = 0
@@ -210,13 +212,14 @@ class PipelineSubject :
         self.print(f"Saving {saving_path}")
         aims.write(obj, filename=str(saving_path))
     
-    def apply_masks(self, 
+    def apply_masks(self,
+                    dilatation : int, 
                     overwrite : bool = False):
         for type_mask, mask_path in self.masks_path.items(): 
 
             path_mask = mask_path.icbm2009
 
-            for type_file in ["threshold", "sulci", "white_matter"]:
+            for type_file in ["threshold", "resampled_icbm"]:
 
                 if check_file(self.path.masked[type_mask][type_file]):
                     if not overwrite : 
@@ -226,5 +229,122 @@ class PipelineSubject :
                 self._apply_mask(
                     source_path=self.path.icbm[type_file],
                     saving_path=self.path.masked[type_mask][type_file],
-                    mask_path= path_mask
+                    mask_path= path_mask,
+                    dilatation=dilatation
                 )
+    def run_pipe(self, overwrite : bool = False, dilatation : int = 2):
+        try :
+            self.resample(overwrite=overwrite)
+        except Exception as e :
+            self.print(e)
+
+        try :
+            self.compute_mean_curvature(overwrite=overwrite)
+        except Exception as e :
+            self.print(e)
+
+        try :
+            self.threshold_mean_curvature(overwrite=overwrite)
+        except Exception as e :
+            self.print(e)
+
+        try :
+            self.apply_masks(overwrite=overwrite, dilatation=dilatation)
+        except Exception as e :
+            self.print(e)
+
+
+class PipelineMask :
+    def __init__(self,
+                 mask_path : MaskPath,
+                 sub_struct_mask : List[int],
+                 resample_values: List[int],
+                 output_voxel : List[int], 
+                 verbose : bool = False
+                 ):
+
+        self.path = mask_path
+
+        self.path.create_saving_paths()
+
+        self.sub_struct_mask = sub_struct_mask
+        self.resample_val = resample_values
+        self.output_voxel = output_voxel
+        self.verbose = verbose
+
+    def print(self, string):
+        if self.verbose :
+            print(string)
+    
+    def retrieve_structure_mask(self, overwrite : bool = False):
+        if check_file(self.path.native):
+            if not overwrite : 
+                raise Exception("File already exists")
+            else : 
+                self.print(f"Overwriting : {self.path.native} ") 
+
+        vol = aims.read(str(self.path.raw))
+
+        vol_np = vol.np
+
+        to_keep = np.isin(vol_np, self.sub_struct_mask)
+        vol_np[to_keep] = 1
+        vol_np[~to_keep] = 0
+
+        self.print(f"Saving : {self.path.native}")
+        aims.write(vol, filename=str(self.path.native))
+
+    def _get_transform_mat(self):
+        graph = aims.read(str(self.path.graph))
+        transf = aims.GraphManip.getICBM2009cTemplateTransform(graph)
+        return transf
+    
+    def _apply_ICBM2009c(self,
+                         source_path : Path,
+                         saving_path : Path,
+                         resample_values : List[int],
+                         ):
+
+        # Loading object
+        native_obj = aims.read(str(source_path))
+        mat_transform = self._get_transform_mat()
+
+        #Convert for sanity
+        c = aims.Converter(intype=native_obj, outtype=aims.Volume('S16'))
+        native_obj = c(native_obj)
+
+        resampled_to_ICBM2009c = resample(
+            input_image=native_obj, 
+            transformation=mat_transform,
+            output_vs=self.output_voxel,
+            background=0,
+            values=resample_values,
+            verbose=self.verbose
+        )
+
+        self.print(f"Saving {saving_path}")
+        aims.write(resampled_to_ICBM2009c, filename=str(saving_path))
+
+    def transform_ICBM2009c(self, overwrite : bool = False):
+
+        if check_file(self.path.icbm2009):
+            if not overwrite : 
+                raise Exception("File already exists")
+            else : 
+                self.print(f"Overwriting : {self.path.icbm2009} ") 
+
+        self._apply_ICBM2009c(source_path= self.path.native,
+                                saving_path=self.path.icbm2009,
+                                resample_values=self.resample_val)
+    
+    def run_pipeline(self,overwrite : bool = False):
+
+        try :
+            self.retrieve_structure_mask(overwrite=overwrite)
+        except Exception as e : 
+            self.print(e)
+
+        try :
+            self.transform_ICBM2009c(overwrite=overwrite)
+        except Exception as e : 
+            self.print(e)
