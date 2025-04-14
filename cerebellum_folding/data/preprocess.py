@@ -55,11 +55,11 @@ class PipelineSubject :
         if not check_file(self.path.mc):
             raise Exception(f"Mean curvature file not available : {self.path.mc}")
         
-        if check_file(self.path.native["threshold"]):
+        if check_file(self.path.icbm["threshold"]):
             if not overwrite : 
                 raise Exception("File already exists")
             else : 
-               self.print(f"Overwriting : {self.path.native['threshold']}") 
+               self.print(f"Overwriting : {self.path.icbm['threshold']}") 
 
         white_matter_thresh = self.wm_thresh
         sulci_thresh = self.sulci_thresh
@@ -81,8 +81,8 @@ class PipelineSubject :
         conv = aims.Converter(intype=obj, outtype=aims.Volume("S16")) 
         vol = conv(obj)
 
-        self.print(f"Saving to {self.path.native['threshold']}")
-        aims.write(obj, filename=str(self.path.native['threshold']))
+        self.print(f"Saving to {self.path.icbm['threshold']}")
+        aims.write(obj, filename=str(self.path.icbm['threshold']))
 
 
     def get_binary_val(self,
