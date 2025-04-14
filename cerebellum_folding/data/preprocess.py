@@ -3,12 +3,15 @@
 
 from cerebellum_folding.data.path import SubjectPath, MaskPath, check_file
 
+import deep_folding.brainvisa.utils.dilate_mask as dl 
 from deep_folding.brainvisa.utils.resample import resample
+import subprocess as sp
 
 from typing import List, Dict, Union
 from pathlib import Path
-from soma import aims
+from soma import aims, aimsalgo
 import numpy as np
+import gc
 
 
 class PipelineSubject :
@@ -124,47 +127,50 @@ class PipelineSubject :
             return None
     
     
-    def _apply_ICBM2009c(self,
-                         source_path : Path,
-                         saving_path : Path,
-                         resample_values : List[int],
-                         ):
+    def resample(self, overwrite : bool = False):
+        
+        if check_file(self.path.icbm["resampled_icbm"]):
+            if not overwrite : 
+                raise Exception("File already exists")
+            else : 
+                self.print(f"Overwriting : {self.path.icbm['resampled_icbm']} ") 
 
-        # Loading object
-        native_obj = aims.read(str(source_path))
-        mat_transform = self._get_transform_mat()
+        vol = aims.read(str(self.path.raw))
+        vol_dt = vol.__array__() # Volume dtype 
 
-        #Convert for sanity
-        c = aims.Converter(intype=native_obj, outtype=aims.Volume('S16'))
-        native_obj = c(native_obj)
+        transform_mat = self._get_transform_mat()
 
-        resampled_to_ICBM2009c = resample(
-            input_image=native_obj, 
-            transformation=mat_transform,
-            output_vs=self.resample_output_voxel,
-            background=0,
-            values=resample_values,
-            verbose=self.verbose
+        # New dimensions of the volume 
+        output_vs = np.array(self.resample_output_voxel)
+        header = aims.StandardReferentials.icbm2009cTemplateHeader()
+
+        resampling_ratio = np.array(header["voxel_size"][:3]) / output_vs
+        origin_dim = header["volume_dimension"][:3]
+
+        new_dim = list((resampling_ratio * origin_dim).astype(int))
+
+        # Generating the new volume
+        resampled = aims.Volume(new_dim, dtype=vol_dt.dtype)
+        resampled.copyHeaderFrom(header)
+        resampled.header()["voxel_size"][:3] = output_vs
+
+        #Resampler 
+        resampler = aimsalgo.ResamplerFactory(vol).getResampler(3) #Interpolation Cubic 
+        resampler.setDefaultValue(0)
+        resampler.setRef(vol)
+
+        #Resampling
+        resampled = resampler.doit(
+            transform_mat, 
+            new_dim[0],
+            new_dim[1],
+            new_dim[2],
+            output_vs
         )
 
-        self.print(f"Saving {saving_path}")
-        aims.write(resampled_to_ICBM2009c, filename=str(saving_path))
-
-    def transform_ICBM2009c(self, overwrite : bool = False):
-
-        for type_file in ["threshold", "sulci", "white_matter"]:
-
-            resample_values = self.resample_val_bin if type_file in ["sulci", "white_matter"] else self.resample_val_icbm
-
-            if check_file(self.path.icbm[type_file]):
-                if not overwrite : 
-                    raise Exception("File already exists")
-                else : 
-                    self.print(f"Overwriting : {self.path.icbm[type_file]} ") 
-
-            self._apply_ICBM2009c(source_path= self.path.native[type_file],
-                                  saving_path=self.path.icbm[type_file],
-                                  resample_values=resample_values)
+        self.print(f"Saving {self.path.icbm['resampled_icbm']}")
+        aims.write(resampled, filename = str(self.path.icbm["resampled_icbm"]))
+        header["voxel_size"][:3] = [1,1,1]
 
     def _apply_mask(self,
                     source_path : Path,
