@@ -74,7 +74,6 @@ class SubjectPath(BasePath) :
         # Init the base folder
         super().__init__(subject_id, graph_folder, tree_graph, raw_folder , tree_raw, nomenclature_raw)
 
-        NATIVE_FOLDER = "native"
         ICBM2009_FOLDER = "ICBM2009c"
         MASKED_FOLDER = "masked"
 
@@ -83,29 +82,21 @@ class SubjectPath(BasePath) :
         # Path where all the data is saved
         self.save = Path(saving_folder) / self.id
         self.available_masks = masks_type
-        self.native = dict()
         self.icbm = dict()
         self.masked = dict([(key, dict()) for key in masks_type]) 
 
-        # File in the native space
-        self.native["mean_curvature"] = self.save / NATIVE_FOLDER / f"{self.id}_mean_curvature.nii.gz"
-
-        self.native["threshold"] = self.save / NATIVE_FOLDER / f"{self.id}_thresh_native.nii.gz"
-        self.native["white_matter"] = self.save / NATIVE_FOLDER / f"{self.id}_white_matter_native.nii.gz"
-        self.native["sulci"] = self.save / NATIVE_FOLDER / f"{self.id}_sulci_native.nii.gz"
-
-        # File in the ICBM2009 space
+        # If transformation matrix is available
         self.transform_mat = transform_path
 
+        # File in the ICBM2009 space (1st step of the pipeline)
         #Without skel
-        self.icbm["threshold"] = self.save / ICBM2009_FOLDER / f"{self.id}_thresh_icbm2009.nii.gz"
-        self.icbm["white_matter"] = self.save / ICBM2009_FOLDER / f"{self.id}_white_matter_icbm2009.nii.gz"
-        self.icbm["sulci"] = self.save / ICBM2009_FOLDER / f"{self.id}_sulci_icbm2009.nii.gz"
+        self.icbm["resampled_icbm"] = self.save / ICBM2009_FOLDER / f"{self.id}_resampled_icbm.nii.gz"
+        self.icbm["mean_curvature"] = self.save / ICBM2009_FOLDER / f"{self.id}_mean_curvature_icbm.nii.gz"
+        self.icbm["threshold"] = self.save / ICBM2009_FOLDER / f"{self.id}_tresh_mc.nii.gz"
 
         for key in self.masked.keys():
             self.masked[key]["threshold"] = self.save / MASKED_FOLDER / key / f"{self.id}_masked_tresh_{key}.nii.gz"
-            self.masked[key]["white_matter"] = self.save / MASKED_FOLDER / key / f"{self.id}_masked_white_matter_{key}.nii.gz"
-            self.masked[key]["sulci"] = self.save / MASKED_FOLDER / key / f"{self.id}_masked_sulci_{key}.nii.gz"
+            self.masked[key]["resampled_icbm"] = self.save / MASKED_FOLDER / key / f"{self.id}_masked_t1mri_{key}.nii.gz"
 
     def _native_exists(self): 
         return dict([(key, os.path.exists(self.native[key])) for key in self.native.keys()])
@@ -130,11 +121,11 @@ class SubjectPath(BasePath) :
     
     @property
     def mc(self):
-        return self.native["mean_curvature"]
+        return self.icbm["mean_curvature"]
     
     @mc.setter
     def mc(self, val):
-        self.native["mean_curvature"] = val
+        self.icbm["mean_curvature"] = val
 
 
     def _create_masked_saving_folders(self):
@@ -144,7 +135,6 @@ class SubjectPath(BasePath) :
     def create_saving_paths(self) :
         if not os.path.exists(self.save):
             os.mkdir(self.save)
-            os.mkdir(self.save / "native")
             os.mkdir(self.save / "ICBM2009c")
             os.mkdir(self.save / "masked")
             self._create_masked_saving_folders()
@@ -170,5 +160,16 @@ class MaskPath(BasePath):
         self.dilated = self.save / self.type / f"{self.id}_{self.type}_native_dilatation.nii.gz"
         self.icbm2009 = self.save / self.type / f"{self.id}_{self.type}_ICBM2009c.nii.gz"
 
+        self.create_saving_paths()
+
+    def create_saving_paths(self) :
+        if not os.path.exists(self.save / self.type):
+            os.mkdir(self.save / self.type)
+
         
         # TODO : Add reports for the transform with the matrix that is used to register from native 
+
+class MergedMaskPath: 
+    def __init__(self, path):
+        self.icbm2009 = Path(path)
+        self.id = self.icbm2009.name
