@@ -76,6 +76,7 @@ class SubjectPath(BasePath) :
 
         ICBM2009_FOLDER = "ICBM2009c"
         MASKED_FOLDER = "masked"
+        CROP_FOLDER = "cropped"
 
         # TODO : Add reports for the transform with the matrix that is used to register from native 
 
@@ -84,6 +85,7 @@ class SubjectPath(BasePath) :
         self.available_masks = masks_type
         self.icbm = dict()
         self.masked = dict([(key, dict()) for key in masks_type]) 
+        self.cropped = dict([(key, dict()) for key in masks_type]) 
 
         # If transformation matrix is available
         self.transform_mat = transform_path
@@ -98,9 +100,10 @@ class SubjectPath(BasePath) :
             self.masked[key]["threshold"] = self.save / MASKED_FOLDER / key / f"{self.id}_masked_tresh_{key}.nii.gz"
             self.masked[key]["resampled_icbm"] = self.save / MASKED_FOLDER / key / f"{self.id}_masked_t1mri_{key}.nii.gz"
 
-    def _native_exists(self): 
-        return dict([(key, os.path.exists(self.native[key])) for key in self.native.keys()])
-        
+        for key in self.cropped.keys():
+            self.cropped[key]["threshold"] = self.save / CROP_FOLDER/ key / f"{self.id}_crop_tresh_{key}.nii.gz"
+            self.cropped[key]["resampled_icbm"] = self.save / CROP_FOLDER / key / f"{self.id}_crop_t1mri_{key}.nii.gz"
+
     def _icbm_exists(self): 
         return dict([(key, os.path.exists(self.icbm[key])) for key in self.icbm.keys()])
 
@@ -114,7 +117,6 @@ class SubjectPath(BasePath) :
     @property
     def dict_exists(self):
         return {
-            "native" : self._native_exists(),
             "icbm" : self._icbm_exists(),
             "masked" : self._masked_exists(),
         }
@@ -131,13 +133,19 @@ class SubjectPath(BasePath) :
     def _create_masked_saving_folders(self):
         for type_mask in self.available_masks : 
             os.mkdir(self.save / "masked" / type_mask)
+
+    def _create_cropped_saving_folders(self):
+        for type_mask in self.available_masks : 
+            os.mkdir(self.save / "cropped" / type_mask)
     
     def create_saving_paths(self) :
         if not os.path.exists(self.save):
             os.mkdir(self.save)
             os.mkdir(self.save / "ICBM2009c")
             os.mkdir(self.save / "masked")
+            os.mkdir(self.save / "cropped")
             self._create_masked_saving_folders()
+            self._create_cropped_saving_folders()
 
 
 class MaskPath(BasePath):

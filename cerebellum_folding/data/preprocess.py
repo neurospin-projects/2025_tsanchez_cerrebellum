@@ -232,6 +232,43 @@ class PipelineSubject :
                     mask_path= path_mask,
                     dilatation=dilatation
                 )
+
+    def _compute_bbox(self, dilatation):
+        type_masks = self.masks_path.keys()
+        bbox_masks = dict()
+        for type_mask in type_masks : 
+            mask = aims.read(str(self.masks_path[type_mask].icbm2009))
+            dilated_mask = dl.dilate(mask, radius=dilatation)
+            val = np.array(np.where(dilated_mask.np == 1)) #Dim (4, flatten of 3D)
+            bbox_masks[type_mask] = np.min(val, axis = 1), np.max(val, axis = 1)
+        return bbox_masks
+    
+    def apply_bbox(self,dilatation, overwrite : bool = False):
+
+        # Compute bounding box for each mask
+        bbox_masks = self._compute_bbox(dilatation=dilatation)
+        self.print("Bbox computed" )
+        print(bbox_masks)
+
+        for type_mask, bbox in bbox_masks.items():
+            for type_file in ["threshold", "resampled_icbm"]: 
+
+                if check_file(self.path.cropped[type_mask][type_file]):
+                    if not overwrite : 
+                        raise Exception("File already exists")
+                    else : 
+                        self.print(f"Overwriting : {self.path.cropped[type_mask][type_file]} ") 
+
+                obj = aims.read(str(self.path.masked[type_mask][type_file]))
+                cropped = aims.VolumeView(obj, bbox[0], bbox[1] - bbox[0])
+                self.print(f"Cropped : {cropped.header()}")
+
+                self.print(f"Saving {self.path.cropped[type_mask][type_file]}")
+                aims.write(cropped, str(self.path.cropped[type_mask][type_file]))
+
+
+
+            
     def run_pipe(self, overwrite : bool = False, dilatation : int = 2):
         try :
             self.resample(overwrite=overwrite)
@@ -250,6 +287,11 @@ class PipelineSubject :
 
         try :
             self.apply_masks(overwrite=overwrite, dilatation=dilatation)
+        except Exception as e :
+            self.print(e)
+
+        try :
+            self.apply_bbox(overwrite=overwrite, dilatation=dilatation)
         except Exception as e :
             self.print(e)
 
