@@ -151,8 +151,8 @@ class PipelineSubject :
 
         # Generating the new volume
         resampled = aims.Volume(new_dim, dtype=vol_dt.dtype)
-        resampled.copyHeaderFrom(header)
-        resampled.header()["voxel_size"][:3] = output_vs
+        resampled.copyHeaderFrom(header) #Be careful it is a shallow copy 
+        resampled.header()["voxel_size"] = list(output_vs) + [1] 
 
         #Resampler 
         resampler = aimsalgo.ResamplerFactory(vol).getResampler(3) #Interpolation Cubic 
@@ -170,7 +170,7 @@ class PipelineSubject :
 
         self.print(f"Saving {self.path.icbm['resampled_icbm']}")
         aims.write(resampled, filename = str(self.path.icbm["resampled_icbm"]))
-        header["voxel_size"][:3] = [1,1,1]
+        # header["voxel_size"][:3] = [1,1,1]
 
     def compute_mean_curvature(self, sigma : float = 1, overwrite : bool = False):
 
