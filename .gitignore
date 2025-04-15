@@ -1,3 +1,7 @@
 **/deep_folding
 **/__pycache__/
 */**/cerebellum_folding
+
+# pixi environments
+.pixi
+*.egg-info

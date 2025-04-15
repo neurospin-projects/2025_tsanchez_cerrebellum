@@ -1,0 +1,17 @@
+[workspace]
+authors = ["Timothée Sanchez <timothee.sanchez.faly@gmail.com>"]
+channels = ["https://brainvisa.info/neuro-forge", "conda-forge", "nvidia", "pytorch"]
+name = "2025_tsanchez_cerrebellum"
+platforms = ["linux-64"]
+version = "0.1.0"
+
+[tasks]
+
+[dependencies]
+python = "==3.11"
+pytorch = ">=2.6.0,<3"
+soma = ">=5.2.1,<6"
+anatomist = ">=5.2.1,<6"
+numpy = ">=1.26.4,<2"
+matplotlib = ">=3.10.1,<4"
+pip = ">=25.0.1,<26"
