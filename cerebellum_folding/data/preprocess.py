@@ -242,7 +242,7 @@ class PipelineSubject :
         # Compute bounding box for each mask
         bbox_masks = self._compute_bbox(dilatation=dilatation)
         self.print("Bbox computed" )
-        print(bbox_masks)
+        self.print(bbox_masks)
 
         for type_mask, bbox in bbox_masks.items():
             for type_file in ["threshold", "resampled_icbm"]: 

@@ -159,21 +159,21 @@ class SubjectPath(BasePath) :
             try :
                 shutil.rmtree(self.save / self._ICBM2009_FOLDER)
             except Exception as e : 
-                self.print(e)
+                print(e)
 
         # Removing masked
         if rm_masked : 
             try :
                 shutil.rmtree(self.save / self._MASKED_FOLDER)
             except Exception as e : 
-                self.print(e)
+                print(e)
 
         # Removing crop
         if rm_crop : 
             try :
                 shutil.rmtree(self.save / self._CROP_FOLDER)
             except Exception as e : 
-                self.print(e)
+                print(e)
 
 
 class MaskPath(BasePath):
