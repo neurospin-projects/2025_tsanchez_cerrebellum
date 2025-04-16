@@ -7,11 +7,10 @@ import deep_folding.brainvisa.utils.dilate_mask as dl
 from deep_folding.brainvisa.utils.resample import resample
 import subprocess as sp
 
-from typing import List, Dict, Union
+from typing import List, Dict
 from pathlib import Path
 from soma import aims, aimsalgo
 import numpy as np
-import gc
 
 
 class PipelineSubject :
@@ -20,9 +19,7 @@ class PipelineSubject :
                  masks_path : Dict[str, MaskPath], 
                  white_matter_threshold : float, 
                  sulci_threshold : float, 
-                 resample_values_icbm : List[int], 
-                 resample_values_bin : List[int],
-                 output_voxel : List[int], 
+                 resample_output_voxel : List[int], 
                  verbose : bool = False,
                 ):
         # Retrieving paths of the subject
@@ -37,9 +34,7 @@ class PipelineSubject :
         # Parameters of the pipeline
         self.wm_thresh = white_matter_threshold
         self.sulci_thresh = sulci_threshold
-        self.resample_val_icbm = resample_values_icbm
-        self.resample_val_bin = resample_values_bin
-        self.resample_output_voxel = output_voxel
+        self.resample_output_voxel = resample_output_voxel
 
         self.verbose = verbose
     
@@ -170,7 +165,6 @@ class PipelineSubject :
 
         self.print(f"Saving {self.path.icbm['resampled_icbm']}")
         aims.write(resampled, filename = str(self.path.icbm["resampled_icbm"]))
-        # header["voxel_size"][:3] = [1,1,1]
 
     def compute_mean_curvature(self, sigma : float = 1, overwrite : bool = False):
 
