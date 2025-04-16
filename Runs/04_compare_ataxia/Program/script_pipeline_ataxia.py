@@ -60,9 +60,10 @@ if __name__ == "__main__":
             masks_path=masks,
             white_matter_threshold=WM_THRESH,
             sulci_threshold=SULCI_THRESH,
-            resample_values_icbm = RESAMPLE_VALUES,
-            resample_values_bin=RESAMPLE_BIN,
-            output_voxel=OUTPUT_VOXEL_SIZE,
+            # resample_values_icbm = RESAMPLE_VALUES,
+            # resample_values_bin=RESAMPLE_BIN,
+            resample_output_voxel=OUTPUT_VOXEL_SIZE,
+            downsample_output_voxel=(1,1,1),
             verbose = True
         )
         pipe.run_pipe(overwrite=True, dilatation=5)

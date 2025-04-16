@@ -1,7 +1,6 @@
 from pathlib import Path
 from cerebellum_folding.data.preprocess import PipelineSubject
 from cerebellum_folding.data.path import MergedMaskPath, SubjectPath
-import gc
 
 SAVING_PATH = "/neurospin/dico/tsanchez/preprocessed/ukb"
 PATH_CEREBELLUM_MASK = "/neurospin/dico/tsanchez/mask/cerebellum/27_ataxia_control_cerebellum.nii.gz"
