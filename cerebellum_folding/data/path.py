@@ -1,6 +1,7 @@
 """Sub lib containing all the file management for the subjects"""
 
 from pathlib import Path
+import shutil
 from typing import Union, List
 import os
 
@@ -74,9 +75,9 @@ class SubjectPath(BasePath) :
         # Init the base folder
         super().__init__(subject_id, graph_folder, tree_graph, raw_folder , tree_raw, nomenclature_raw)
 
-        ICBM2009_FOLDER = "ICBM2009c"
-        MASKED_FOLDER = "masked"
-        CROP_FOLDER = "cropped"
+        self._ICBM2009_FOLDER = "ICBM2009c"
+        self._MASKED_FOLDER = "masked"
+        self._CROP_FOLDER = "cropped"
 
         # TODO : Add reports for the transform with the matrix that is used to register from native 
 
@@ -93,17 +94,21 @@ class SubjectPath(BasePath) :
 
         # File in the ICBM2009 space (1st step of the pipeline)
         #Without skel
-        self.icbm["resampled_icbm"] = self.save / ICBM2009_FOLDER / f"{self.id}_resampled_icbm.nii.gz"
-        self.icbm["mean_curvature"] = self.save / ICBM2009_FOLDER / f"{self.id}_mean_curvature_icbm.nii.gz"
-        self.icbm["threshold"] = self.save / ICBM2009_FOLDER / f"{self.id}_tresh_mc.nii.gz"
+        self.icbm["resampled_icbm"] = self.save / self._ICBM2009_FOLDER / f"{self.id}_resampled_icbm.nii.gz"
+        self.icbm["mean_curvature"] = self.save / self._ICBM2009_FOLDER / f"{self.id}_mean_curvature_icbm.nii.gz"
+        self.icbm["threshold"] = self.save / self._ICBM2009_FOLDER / f"{self.id}_tresh_mc.nii.gz"
 
         for key in self.masked.keys():
-            self.masked[key]["threshold"] = self.save / MASKED_FOLDER / key / f"{self.id}_masked_tresh_{key}.nii.gz"
-            self.masked[key]["resampled_icbm"] = self.save / MASKED_FOLDER / key / f"{self.id}_masked_t1mri_{key}.nii.gz"
+            self.masked[key]["threshold"] = self.save / self._MASKED_FOLDER / key / f"{self.id}_masked_tresh_{key}.nii.gz"
+            self.masked[key]["resampled_icbm"] = self.save / self._MASKED_FOLDER / key / f"{self.id}_masked_t1mri_{key}.nii.gz"
 
         for key in self.cropped.keys():
-            self.cropped[key]["threshold"] = self.save / CROP_FOLDER/ key / f"{self.id}_crop_tresh_{key}.nii.gz"
-            self.cropped[key]["resampled_icbm"] = self.save / CROP_FOLDER / key / f"{self.id}_crop_t1mri_{key}.nii.gz"
+            self.cropped[key]["threshold"] = self.save / self._CROP_FOLDER/ key / f"{self.id}_crop_tresh_{key}.nii.gz"
+            self.cropped[key]["resampled_icbm"] = self.save / self._CROP_FOLDER / key / f"{self.id}_crop_t1mri_{key}.nii.gz"
+        
+        for key in self.cropped.keys():
+            self.numpy[key] = self.save / f"{self.id}_{key}.npy"
+
 
     def _icbm_exists(self): 
         return dict([(key, os.path.exists(self.icbm[key])) for key in self.icbm.keys()])
@@ -147,6 +152,28 @@ class SubjectPath(BasePath) :
             os.mkdir(self.save / "cropped")
             self._create_masked_saving_folders()
             self._create_cropped_saving_folders()
+
+    def clear_folder(self, rm_icbm : bool = False, rm_masked : bool = False, rm_crop : bool = False): 
+        # Removing ICBM folder
+        if rm_icbm : 
+            try :
+                shutil.rmtree(self.save / self._ICBM2009_FOLDER)
+            except Exception as e : 
+                self.print(e)
+
+        # Removing masked
+        if rm_masked : 
+            try :
+                shutil.rmtree(self.save / self._MASKED_FOLDER)
+            except Exception as e : 
+                self.print(e)
+
+        # Removing crop
+        if rm_crop : 
+            try :
+                shutil.rmtree(self.save / self._CROP_FOLDER)
+            except Exception as e : 
+                self.print(e)
 
 
 class MaskPath(BasePath):

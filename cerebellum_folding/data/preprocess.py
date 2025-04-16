@@ -259,8 +259,6 @@ class PipelineSubject :
 
                 self.print(f"Saving {self.path.cropped[type_mask][type_file]}")
                 aims.write(cropped, str(self.path.cropped[type_mask][type_file]))
-
-
                 
                 if type_file == "threshold" :
                     np_crop = cropped.np.copy()
@@ -269,7 +267,7 @@ class PipelineSubject :
                 
 
             
-    def run_pipe(self, overwrite : bool = False, dilatation : int = 2):
+    def run_pipe(self,  overwrite : bool = False, dilatation : int = 5, delete_tmp_settings : Dict = None):
         try :
             self.resample(overwrite=overwrite)
         except Exception as e :
@@ -294,6 +292,10 @@ class PipelineSubject :
             self.apply_bbox(overwrite=overwrite, dilatation=dilatation)
         except Exception as e :
             self.print(e)
+        
+        if delete_tmp_settings :
+            self.print("Clearing useless folders, keeping only numpy file")
+            self.path.clear_folder(**delete_tmp_settings)
 
 
 class PipelineMask :
