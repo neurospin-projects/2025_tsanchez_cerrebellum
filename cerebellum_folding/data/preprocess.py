@@ -261,6 +261,12 @@ class PipelineSubject :
                 aims.write(cropped, str(self.path.cropped[type_mask][type_file]))
 
 
+                
+                if type_file == "threshold" :
+                    np_crop = cropped.np.copy()
+                    np_crop = np_crop.astype(np.int16)
+                    np.save(self.path.numpy[type_mask], np_crop)
+                
 
             
     def run_pipe(self, overwrite : bool = False, dilatation : int = 2):

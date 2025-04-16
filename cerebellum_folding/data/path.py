@@ -86,6 +86,7 @@ class SubjectPath(BasePath) :
         self.icbm = dict()
         self.masked = dict([(key, dict()) for key in masks_type]) 
         self.cropped = dict([(key, dict()) for key in masks_type]) 
+        self.numpy = dict([(key, dict()) for key in masks_type]) 
 
         # If transformation matrix is available
         self.transform_mat = transform_path
