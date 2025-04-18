@@ -47,8 +47,8 @@ from datetime import datetime
 now = datetime.now()
 
 from train import train_vae
-from load_data import create_subset
 from utils.config import process_config
+from preprocess import UkbDataset
 
 def adjust_in_shape(config):
     """
@@ -63,7 +63,7 @@ def adjust_in_shape(config):
         if r!=0:
             dim+=(2**config.depth-r)
         dims.append(dim)
-    return((1, dims[0]+4, dims[1], dims[2]))
+    return((1, dims[0]+4, dims[1], dims[2])) # ! removed dim[0]+4 because it was strange
 
 @hydra.main(config_name='config', version_base="1.1", config_path="configs")
 def train_model(config):
@@ -92,12 +92,13 @@ def train_model(config):
     """ Load data and generate torch datasets """
     # TODO Change this function to have a DataLoader
     # ! The data stored in subset1.df is not reshaped, the reshaping is done in the __getitem__
-    subset1 = create_subset(config)
+    dataset = UkbDataset(config)
+
 
     #### * Splitting the data
     # ! From here the shape of the tensor or the config.in_shape
-    train_set, val_set = torch.utils.data.random_split(subset1,
-                            [round(0.8*len(subset1)), round(0.2*len(subset1))])
+    train_set, val_set = torch.utils.data.random_split(dataset,
+                            [round(0.8*len(dataset)), round(0.2*len(dataset))])
 
     #### * Making the data loader
     trainloader = torch.utils.data.DataLoader(

@@ -36,16 +36,78 @@
 # https://github.com/neurospin-projects/2021_jchavas_lguillon_deepcingulate/
 #                   betaVAE/load_data.py
 
+import re
+import os
+from pathlib import Path
 import numpy as np
+import pandas as pd
+
 from omegaconf import DictConfig
+
 import torch
 import torchvision.transforms as transforms
 from torch.utils.data import Dataset
 
+class DatasetPaths : 
+    def __init__(self, root_dir):
+        self.root = root_dir
+        self._dict_files = self._get_npy_files()
+    
+    def _get_npy_files(self):
+        regex = r'(sub-)[0-9]{7}_[a-z]*.npy'
+        # print(f"Regex used for numpy file scrapping : {regex}")
+        np_file_reg = re.compile(r'(sub-)[0-9]{7}_[a-z]*.npy')
+
+        dict_files = dict()
+        
+        for root, _, files in os.walk(self.root):
+            for file in files : 
+                if re.match(np_file_reg, file):
+                   path_root = Path(root)
+                   dict_files[path_root.name] = path_root / file
+        
+        return dict_files
+    
+    def __len__(self):
+        return len(self._dict_files.keys())
+    
+    @property
+    def list_subjects(self):
+        return list(self._dict_files.keys())
+    
+    def __getitem__(self, val):
+        return self._dict_files[val]
+
 class UkbDataset(Dataset) : 
     def __init__(self, 
                  config : DictConfig):
-        pass
+        self.config = config
+        print(self.config)
+        self.root_dir = self.config.data_root
+        self.paths = DatasetPaths(self.root_dir)
+        self.list_subjects  = pd.Series(self.paths.list_subjects)
+
+    def __len__(self):
+        return len(self.paths)
+    
+    def __getitem__(self, index):
+        subject = self.list_subjects.iloc[index]
+        np_file = np.load(self.paths[subject])
+
+        # Remove last dimension of [x,y,z,1]
+        np_3d = np_file[:,:,:,0] # Shape [x,y,z]
+
+        # Fixing the shape of the tensor
+        padder = Padding(self.config.in_shape[1:], nb_channels= 1, fill_value=0)
+        clean_np = padder(np_3d)
+
+        volume_tensor = torch.from_numpy(clean_np)
+        volume_tensor.unsqueeze_(0)
+
+        return volume_tensor, subject
+
+        
+        
 
 
 class SkeletonDataset():
