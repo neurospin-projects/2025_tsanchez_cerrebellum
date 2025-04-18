@@ -32,10 +32,7 @@
 #
 # The fact that you are presently reading this means that you have had
 # knowledge of the CeCILL license version 2 and that you accept its terms.
-import logging
-import os
 
-import omegaconf
 from omegaconf import DictConfig
 from omegaconf import OmegaConf
 

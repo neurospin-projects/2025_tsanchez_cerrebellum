@@ -37,10 +37,15 @@
 #                   betaVAE/load_data.py
 
 import numpy as np
-import pandas as pd
+from omegaconf import DictConfig
 import torch
 import torchvision.transforms as transforms
-#from configs.config import Config
+from torch.utils.data import Dataset
+
+class UkbDataset(Dataset) : 
+    def __init__(self, 
+                 config : DictConfig):
+        pass
 
 
 class SkeletonDataset():
@@ -75,34 +80,13 @@ class SkeletonDataset():
             sample = self.df.iloc[idx][0]
 
         fill_value = 0
-        self.transform = transforms.Compose([NormalizeSkeleton(),
-                         Padding(list(self.config.in_shape), fill_value=fill_value)
-                         ])
+        self.transform = transforms.Compose([
+                                Padding(list(self.config.in_shape), fill_value=fill_value)
+                                ])
         sample = self.transform(sample)
         tuple_with_path = (sample, filename)
         return tuple_with_path
 
-
-class NormalizeSkeleton(object):
-    """
-    Class to normalize skeleton objects,
-    black voxels: 0
-    grey and white voxels: 1
-    """
-    def __init__(self, nb_cls=2):
-        """ Initialize the instance"""
-        self.nb_cls = nb_cls
-
-    def __call__(self, arr):
-        if self.nb_cls==2:
-            arr[arr > 0] = 1
-        else:
-            arr[arr==40]=30
-            arr[arr==70]=80
-            arr[arr==30]=1
-            arr[arr==60]=2
-            arr[arr==80]=3
-        return arr
 
 
 class Padding(object):

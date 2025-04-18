@@ -37,16 +37,10 @@
 
 
 import os
-import sys
 import hydra
-import omegaconf
 from omegaconf import OmegaConf
 
 import numpy as np
-import pandas as pd
-import json
-import yaml
-import itertools
 import torch
 
 from datetime import datetime
@@ -54,10 +48,13 @@ now = datetime.now()
 
 from train import train_vae
 from load_data import create_subset
-#from configs.config import Config
 from utils.config import process_config
 
 def adjust_in_shape(config):
+    """
+    Function to make sure that the output of the encoder is composed of integers 
+    In this case : Each block (conv_x + conv_x_a) reduce by 2 the dimension of the volume.
+    """
 
     dims=[]
     for idx in range(1, 4):
@@ -70,11 +67,12 @@ def adjust_in_shape(config):
 
 @hydra.main(config_name='config', version_base="1.1", config_path="configs")
 def train_model(config):
-    #config = Config()
-    config=process_config(config)
+
+    config = process_config(config)
 
     torch.manual_seed(3) #same seed = same training ? yes, pourtant différents entraînements donnent des outputs diff ?
     # take random seed like contrastive and save it in logs / config ?
+
     config.save_dir = config.save_dir + f"/{now:%Y-%m-%d}/{now:%H-%M-%S}/"
     config.in_shape = adjust_in_shape(config)
 
@@ -92,9 +90,16 @@ def train_model(config):
         OmegaConf.save(config, f)
 
     """ Load data and generate torch datasets """
+    # TODO Change this function to have a DataLoader
+    # ! The data stored in subset1.df is not reshaped, the reshaping is done in the __getitem__
     subset1 = create_subset(config)
+
+    #### * Splitting the data
+    # ! From here the shape of the tensor or the config.in_shape
     train_set, val_set = torch.utils.data.random_split(subset1,
                             [round(0.8*len(subset1)), round(0.2*len(subset1))])
+
+    #### * Making the data loader
     trainloader = torch.utils.data.DataLoader(
                   train_set,
                   batch_size=config.batch_size,
@@ -111,17 +116,11 @@ def train_model(config):
         val_label.append(path[0])
     np.savetxt(f"{config.save_dir}/val_label.csv", np.array(val_label), delimiter =", ", fmt ='% s')
 
-    device = "cpu"
-    if torch.cuda.is_available():
-        device = "cuda:0"
-
-    #weights = [1, 2]
-    #class_weights = torch.FloatTensor(weights).to(device)
-    #criterion = torch.nn.CrossEntropyLoss(weight=class_weights, reduction='sum')
-
     """ Train model for given configuration """
+    ### * Training the model
     vae, final_loss_val = train_vae(config, trainloader, valloader,
                                     root_dir=config.save_dir)
+
 
     # """ Evaluate model performances """
     # dico_set_loaders = {'train': trainloader, 'val': valloader}

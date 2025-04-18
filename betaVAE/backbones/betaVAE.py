@@ -33,15 +33,10 @@
 # The fact that you are presently reading this means that you have had
 # knowledge of the CeCILL license version 2 and that you accept its terms.
 
-from collections import OrderedDict
-import numpy as np
 import torch
-import pandas as pd
+from collections import OrderedDict
 from torch.autograd import Variable
 import torch.nn as nn
-
-from deep_folding.utils.pytorchtools import EarlyStopping
-from postprocess import plot_loss
 
 
 class VAE(nn.Module):
@@ -59,7 +54,9 @@ class VAE(nn.Module):
         self.n_latent = n_latent
         c,h,w,d = in_shape
         self.depth = depth
-        self.z_dim_h = h//2**depth # receptive field downsampled 2 times
+
+        # ! Each block divide but 2 the initial input shape
+        self.z_dim_h = h//2**depth 
         self.z_dim_w = w//2**depth
         self.z_dim_d = d//2**depth
 
@@ -77,6 +74,7 @@ class VAE(nn.Module):
             modules_encoder.append(('LeakyReLU%sa' %step, nn.LeakyReLU()))
         self.encoder = nn.Sequential(OrderedDict(modules_encoder))
 
+        # ! Hardcoded here, but should be 2**depth instead of 64 -> Most of the time it is run with depth == 3
         self.z_mean = nn.Linear(64 * self.z_dim_h * self.z_dim_w* self.z_dim_d, n_latent)
         self.z_var = nn.Linear(64 * self.z_dim_h * self.z_dim_w* self.z_dim_d, n_latent)
         self.z_develop = nn.Linear(n_latent, 64 *self.z_dim_h * self.z_dim_w* self.z_dim_d)

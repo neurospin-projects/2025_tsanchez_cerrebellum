@@ -36,7 +36,6 @@
 from collections import OrderedDict
 import numpy as np
 import torch
-import pandas as pd
 from torch.autograd import Variable
 import torch.nn as nn
 
@@ -57,7 +56,7 @@ class VAE(nn.Module):
         self.n_latent = n_latent
         c,h,w,d = in_shape
         self.depth = depth
-        self.z_dim_h = h//2**depth # receptive field downsampled 2 times
+        self.z_dim_h = h//2**depth # receptive field downsampled 2 times for each step
         self.z_dim_w = w//2**depth
         self.z_dim_d = d//2**depth
 
@@ -74,6 +73,8 @@ class VAE(nn.Module):
             modules_encoder.append(('norm%sa' %step, nn.BatchNorm3d(out_channels)))
             modules_encoder.append(('LeakyReLU%sa' %step, nn.LeakyReLU()))
         self.encoder = nn.Sequential(OrderedDict(modules_encoder))
+
+        # Flatten of the input : nb_filter = 16 * 2**depth
 
         self.z_mean = nn.Linear(64 * self.z_dim_h * self.z_dim_w* self.z_dim_d, n_latent)
         self.z_var = nn.Linear(64 * self.z_dim_h * self.z_dim_w* self.z_dim_d, n_latent)
