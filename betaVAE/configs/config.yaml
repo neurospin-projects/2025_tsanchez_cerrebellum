@@ -1,6 +1,6 @@
 defaults:
  - _self_
- - dataset: cristobal/SC-sylv_right_HCP
+ - dataset: UkBio1000_vermis
  - model: BetaVAE
  - trainer: trainer
  - loss: CrossEntropy
