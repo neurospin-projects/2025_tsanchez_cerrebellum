@@ -95,7 +95,7 @@ class VAE(nn.Module):
             modules_decoder.append(('ReLU%sa' %step, nn.ReLU()))
         modules_decoder.append(('convtrans3dn', nn.ConvTranspose3d(16, 1, kernel_size=2,
                         stride=2, padding=0)))
-        modules_decoder.append(('conv_final', nn.Conv3d(1, 2, kernel_size=1, stride=1)))
+        modules_decoder.append(('conv_final', nn.Conv3d(1, 3, kernel_size=1, stride=1)))
         self.decoder = nn.Sequential(OrderedDict(modules_decoder))
         self.weight_initialization()
 
@@ -141,9 +141,9 @@ class VAE(nn.Module):
         return out, mean, logvar
 
 
-def vae_loss(output, input, mean, logvar, loss_func, kl_weight):
-    recon_loss = loss_func(output, input)
+def vae_loss(output, inputs, mean, logvar, loss_func, kl_weight):
     kl_loss = -0.5 * torch.sum(-torch.exp(logvar) - mean**2 + 1. + logvar)
+    recon_loss = loss_func(output, inputs)
     return recon_loss, kl_loss, recon_loss + kl_weight * kl_loss
 
 
