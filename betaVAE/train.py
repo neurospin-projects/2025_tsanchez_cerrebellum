@@ -71,9 +71,10 @@ def train_vae(config, trainloader, valloader, root_dir=None):
     vae.to(device)
     summary(vae, list(config.in_shape))
 
-    weights = [1, 2]
+    weights = config.weights
     class_weights = torch.FloatTensor(weights).to(device)
-    criterion = nn.CrossEntropyLoss(weight=class_weights, reduction='sum')
+    # ! Like if we chose that all the class are equal to 1
+    criterion = nn.CrossEntropyLoss(weight=None, reduction='sum')
     optimizer = torch.optim.Adam(vae.parameters(), lr=lr)
 
     nb_epoch = config.nb_epoch
@@ -93,7 +94,8 @@ def train_vae(config, trainloader, valloader, root_dir=None):
             optimizer.zero_grad()
 
             inputs = Variable(inputs).to(device, dtype=torch.float32)
-            target = torch.squeeze(inputs, dim=1).long()
+            # ! Cross entropy doesn't take negative values so added 1 to each class
+            target = torch.squeeze(inputs, dim=1).long() + 1
             output, z, logvar = vae(inputs)
             partial_recon_loss, partial_kl, loss = vae_loss(output, target, z,
                                     logvar, criterion,
@@ -146,7 +148,8 @@ def train_vae(config, trainloader, valloader, root_dir=None):
             with torch.no_grad():
                 inputs = Variable(inputs).to(device, dtype=torch.float32)
                 output, z, logvar = vae(inputs)
-                target = torch.squeeze(inputs, dim=1).long()
+            # ! Cross entropy doesn't take negative values so added 1 to each class
+                target = torch.squeeze(inputs, dim=1).long() + 1
                 partial_recon_loss_val, partial_kl_val, loss = vae_loss(output, target,
                                         z, logvar, criterion,
                                         kl_weight=config.kl)
