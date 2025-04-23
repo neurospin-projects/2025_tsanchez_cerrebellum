@@ -41,6 +41,7 @@ import os
 from pathlib import Path
 import numpy as np
 import pandas as pd
+from typing import Dict
 
 from omegaconf import DictConfig
 
@@ -81,11 +82,19 @@ class DatasetPaths :
 class UkbDataset(Dataset) : 
     def __init__(self, 
                  config : DictConfig):
+
         self.config = config
-        print(self.config)
-        self.root_dir = self.config.data_root
-        self.paths = DatasetPaths(self.root_dir)
-        self.list_subjects  = pd.Series(self.paths.list_subjects)
+        # print(self.config)
+
+        if isinstance(config, DictConfig):
+            self.root_dir = self.config.data_root
+            self.paths = DatasetPaths(self.root_dir)
+            self.list_subjects  = pd.Series(self.paths.list_subjects)
+
+        elif isinstance(config, Dict):
+            self.root_dir = self.config["root"]
+            self.paths = DatasetPaths(self.root_dir)
+            self.list_subjects  = pd.Series(self.paths.list_subjects)
 
     def __len__(self):
         return len(self.paths)
@@ -98,7 +107,10 @@ class UkbDataset(Dataset) :
         np_3d = np_file[:,:,:,0] # Shape [x,y,z]
 
         # Fixing the shape of the tensor
-        padder = Padding(self.config.in_shape[1:], nb_channels= 1, fill_value=0)
+        if isinstance(self.config, DictConfig):
+            padder = Padding(self.config.in_shape[1:], nb_channels= 1, fill_value=0)
+        else : 
+            padder = Padding(self.config["in_shape"][1:], nb_channels= 1, fill_value=0)
         clean_np = padder(np_3d)
 
         volume_tensor = torch.from_numpy(clean_np)
