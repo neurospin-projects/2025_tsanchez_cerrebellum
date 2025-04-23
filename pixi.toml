@@ -28,3 +28,22 @@ tensorboard = ">=2.19.0,<3"
 scikit-learn = ">=1.6.1,<2"
 omegaconf = ">=2.3.0,<3"
 tqdm = ">=4.67.1,<5"
+
+[feature.visualisation.tasks]
+
+[feature.visualisation.dependencies]
+python = "==3.11"
+soma = ">=5.2.1,<6"
+anatomist = ">=5.2.1,<6"
+numpy = ">=1.26.4,<2"
+matplotlib = ">=3.10.1,<4"
+pip = ">=25.0.1,<26"
+virtualgl = ">=3.1.1,<4"
+ipykernel = ">=6.29.5,<7"
+pandas = ">=2.2.3,<3"
+seaborn = ">=0.13.2,<0.14"
+umap-learn = ">=0.5.7,<0.6"
+
+[environments]
+visualisation  = ["visualisation"]
+
