@@ -15,6 +15,7 @@ OUTPUT_VOXEL_SIZE = (0.5,0.5,0.5)
 
 NUMBER_SUBJECTS = 1000
 
+# Max number of subjects after filtering qc : 21045 
 qc_file = Path("/neurospin/dico/data/deep_folding/current/datasets/UkBioBank/qc_post.tsv")
 
 df_qc = pd.read_csv(qc_file, sep = "\t")
