@@ -147,19 +147,36 @@ class SubjectPath(BasePath) :
     def create_saving_paths(self) :
         if not os.path.exists(self.save):
             os.mkdir(self.save)
+
+        if not os.path.exists(self.save / "ICBM2009c"):
             os.mkdir(self.save / "ICBM2009c")
+
+        if not os.path.exists(self.save / "masked"):
             os.mkdir(self.save / "masked")
-            os.mkdir(self.save / "cropped")
             self._create_masked_saving_folders()
+
+        if not os.path.exists(self.save / "cropped"):
+            os.mkdir(self.save / "cropped")
             self._create_cropped_saving_folders()
 
-    def clear_folder(self, rm_icbm : bool = False, rm_masked : bool = False, rm_crop : bool = False): 
+    def clear_folder(self,
+                     rm_icbm : bool = False,
+                     rm_mean_curvature : bool = True,
+                     rm_masked : bool = False,
+                     rm_crop : bool = False): 
         # Removing ICBM folder
         if rm_icbm : 
             try :
                 shutil.rmtree(self.save / self._ICBM2009_FOLDER)
             except Exception as e : 
                 print(e)
+        elif not rm_icbm and rm_mean_curvature : 
+            try : 
+                os.remove(self.icbm["mean_curvature"])
+                os.remove(str(self.icbm["mean_curvature"]) + ".minf")
+            except Exception as e: 
+                print(e)
+
 
         # Removing masked
         if rm_masked : 
