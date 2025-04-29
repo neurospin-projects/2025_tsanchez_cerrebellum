@@ -166,13 +166,22 @@ class PipelineSubject :
         self.print(f"Saving {self.path.icbm['resampled_icbm']}")
         aims.write(resampled, filename = str(self.path.icbm["resampled_icbm"]))
 
-    def compute_mean_curvature(self, sigma : float = 1, overwrite : bool = False):
+    def compute_mean_curvature(self,
+                               sigma : float = 1,
+                               overwrite : bool = False,
+                               overwrite_if_thresh : bool = False):
 
         if check_file(self.path.icbm["mean_curvature"]):
             if not overwrite : 
                 raise Exception("File already exists")
             else : 
                 self.print(f"Overwriting : {self.path.icbm['mean_curvature']} ") 
+
+        if check_file(self.path.icbm["threshold"]):
+            if not overwrite_if_thresh : 
+                raise Exception("Thresh already exists")
+            else : 
+                self.print("Computing mean curvature again...") 
         
         CMD_MEAN_CURV = ["VipGeometry",
                 "-m", "mc",
@@ -274,7 +283,8 @@ class PipelineSubject :
             self.print(e)
 
         try :
-            self.compute_mean_curvature(overwrite=overwrite)
+            self.compute_mean_curvature(overwrite=overwrite,
+                                        overwrite_if_thresh = False)
         except Exception as e :
             self.print(e)
 
