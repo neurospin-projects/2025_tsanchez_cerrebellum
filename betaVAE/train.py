@@ -94,6 +94,7 @@ def train_vae(config, trainloader, valloader, root_dir=None):
             optimizer.zero_grad()
 
             inputs = Variable(inputs).to(device, dtype=torch.float32)
+
             # ! Cross entropy doesn't take negative values so added 1 to each class
             target = torch.squeeze(inputs, dim=1).long() + 1
             output, z, logvar = vae(inputs)
@@ -125,8 +126,7 @@ def train_vae(config, trainloader, valloader, root_dir=None):
         list_loss_train.append(running_loss)
         running_loss = 0.0
 
-        """ Saving of reconstructions for visualization in Anatomist software """
-        if epoch == nb_epoch-1:
+        if (epoch%30) == 0:
             for k in range(len(path)):
                 id_arr.append(path[k])
                 phase_arr.append('train')
@@ -173,16 +173,19 @@ def train_vae(config, trainloader, valloader, root_dir=None):
         list_loss_val.append(valid_loss)
 
         early_stopping(valid_loss, vae)
-        print("")
 
         """ Saving of reconstructions for visualization in Anatomist software """
-        if early_stopping.early_stop or epoch == nb_epoch-1:
+        if (epoch%30 == 0):
             for k in range(len(path)):
                 id_arr.append(path[k])
                 phase_arr.append('val')
                 input_arr.append(np.array(np.squeeze(inputs[k]).cpu().detach().numpy()))
                 output_arr.append(np.squeeze(output[k]).cpu().detach().numpy())
+            # break
+
+        if early_stopping.early_stop or epoch == nb_epoch -1:
             break
+
     for key, array in {'input': input_arr, 'output' : output_arr,
                            'phase': phase_arr, 'id': id_arr}.items():
         np.save(config.save_dir+key, np.array([array]))
