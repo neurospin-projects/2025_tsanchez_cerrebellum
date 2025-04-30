@@ -44,7 +44,7 @@ import torch.nn as nn
 class VAE(nn.Module):
     """ beta-VAE class
     """
-    def __init__(self, in_shape, n_latent, depth, device = None):
+    def __init__(self, in_shape, n_latent, depth, device = None, nb_channel : bool = None):
         """
         Args:
             in_shape: tuple, input shape
@@ -64,6 +64,8 @@ class VAE(nn.Module):
         self.in_shape = in_shape
         self.n_latent = n_latent
         c,h,w,d = in_shape
+        if not nb_channel : 
+            nb_channel = 1
         self.depth = depth
         self.z_dim_h = h//2**depth # receptive field downsampled 2 times for each step
         self.z_dim_w = w//2**depth
@@ -71,7 +73,7 @@ class VAE(nn.Module):
 
         modules_encoder = []
         for step in range(depth):
-            in_channels = 1 if step == 0 else out_channels
+            in_channels = nb_channel if step == 0 else out_channels
             out_channels = 16 if step == 0  else 16 * (2**step)
             modules_encoder.append(('conv%s' %step, nn.Conv3d(in_channels, out_channels,
                     kernel_size=3, stride=1, padding=1)))

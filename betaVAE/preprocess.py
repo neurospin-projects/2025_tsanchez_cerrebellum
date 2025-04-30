@@ -104,19 +104,24 @@ class UkbDataset(Dataset) :
         np_file = np.load(self.paths[subject])
 
         # Remove last dimension of [x,y,z,1]
-        np_3d = np_file[:,:,:,0] # Shape [x,y,z]
+        np_3d = np.squeeze(np_file, axis = -1) # Shape [x,y,z]
 
         # Fixing the shape of the tensor
         if isinstance(self.config, DictConfig):
             padder = Padding(self.config.in_shape[1:], nb_channels= 1, fill_value=0)
         else : 
             padder = Padding(self.config["in_shape"][1:], nb_channels= 1, fill_value=0)
-        clean_np = padder(np_3d)
 
-        volume_tensor = torch.from_numpy(clean_np)
-        volume_tensor.unsqueeze_(0)
+        clean_np = padder(np_3d) #Shape [x+p_x, y+p_y, z+p_z] w/ (p_x, p_y, p_z) : padding for each dim
 
-        return volume_tensor, subject
+        volume_tensor = torch.from_numpy(clean_np) #Tensor
+
+        # * Splitting in 2 channels 
+        white_mat_tens = torch.where(volume_tensor == -1, 1, 0)
+        sulci_tens = torch.where(volume_tensor == 1, 1, 0)
+        split_channel_vol = torch.stack([white_mat_tens, sulci_tens])
+
+        return split_channel_vol, subject
 
         
 class Padding(object):

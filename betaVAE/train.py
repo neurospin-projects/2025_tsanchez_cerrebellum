@@ -64,7 +64,7 @@ def train_vae(config, trainloader, valloader, root_dir=None):
 
     lr = config.lr
     print(list(config.in_shape))
-    vae = VAE(config.in_shape, config.n, depth=3)
+    vae = VAE(config.in_shape, config.n, depth=3, nb_channel= 2)
     device = "cpu"
     if torch.cuda.is_available():
         device = "cuda:0"
