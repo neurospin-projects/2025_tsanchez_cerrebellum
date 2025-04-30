@@ -119,50 +119,6 @@ class UkbDataset(Dataset) :
         return volume_tensor, subject
 
         
-        
-
-
-class SkeletonDataset():
-    """Custom dataset for skeleton images that includes image file paths.
-    Args:
-        dataframe: dataframe containing training and testing arrays
-        filenames: optional, list of corresponding filenames
-    Returns:
-        tuple_with_path: tuple of type (sample, filename) with sample normalized
-                         and padded
-    """
-    def __init__(self, config, dataframe, filenames=None):
-        self.df = dataframe
-        self.config = config
-        if filenames:
-            self.filenames = filenames
-        else:
-            self.filenames = None
-
-    def __len__(self):
-        return len(self.df)
-
-    def __getitem__(self, idx):
-        if torch.is_tensor(idx):
-            idx = idx.tolist()
-
-        if self.filenames:
-            filename = self.filenames[idx]
-            sample = np.expand_dims(np.squeeze(self.df.iloc[idx][0]), axis=0)
-        else:
-            filename = self.df.iloc[idx]['ID']
-            sample = self.df.iloc[idx][0]
-
-        fill_value = 0
-        self.transform = transforms.Compose([
-                                Padding(list(self.config.in_shape), fill_value=fill_value)
-                                ])
-        sample = self.transform(sample)
-        tuple_with_path = (sample, filename)
-        return tuple_with_path
-
-
-
 class Padding(object):
     """ A class to pad an image.
     """
