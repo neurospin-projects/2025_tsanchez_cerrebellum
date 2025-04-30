@@ -4,3 +4,4 @@ defaults:
  - model: BetaVAE
  - trainer: trainer
  - loss: CrossEntropy
+ - hydra: local
