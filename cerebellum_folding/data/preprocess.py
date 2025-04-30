@@ -1,5 +1,8 @@
 """Library for the preprocessing pipeline"""
-
+# TODO Remove dilatation print 
+# TODO Add a tqdm like thing to see the execution of the pipeline
+# TODO If numpy of interest exists -> Don't run pipeline
+# TODO Add logging 
 
 from cerebellum_folding.data.path import SubjectPath, MaskPath, check_file
 
