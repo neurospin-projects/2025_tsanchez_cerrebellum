@@ -12,7 +12,6 @@ from pathlib import Path
 class VisualiserAnatomist :
     def __init__(self,
                  path_or_obj : Path,
-                 saving_path : Path,
                  dict_views : Dict,
                  anatomist,
                  window,
@@ -23,7 +22,6 @@ class VisualiserAnatomist :
         self.win.setHasCursor(0)
 
         self.path_or_obj = path_or_obj
-        self.saving_path = saving_path
 
         self.dict_views = dict_views
 
@@ -41,9 +39,9 @@ class VisualiserAnatomist :
         vol_tensor = torch.from_numpy(vol_np)
         vol_sq = vol_tensor.squeeze(0)
         vol = vol_sq.unsqueeze(-1)
-        # vol_int = vol.to(dtype=torch.int16)
+        vol_int = vol.to(dtype=torch.int16)
 
-        return vol
+        return vol_int
 
 
     
@@ -74,13 +72,13 @@ class VisualiserAnatomist :
                     clip_quaternion : aims.Quaternion,
                     view_quaternion : List,
                     zoom : float,
-                    palette : np.ndarray):
+                    ):
 
         palette = self.gen_palette()
-        # palette = self.gen_palette(palette)
+
         self.clipped.setQuaternion(clip_quaternion)
         self.clipped.setPalette(palette)
-        # print(self.clipped.getInfos())
+
         self.win.camera(view_quaternion = view_quaternion, zoom = zoom)
 
 
@@ -124,16 +122,19 @@ class VisualiserAnatomist :
             view_settings[0], # Slice Quaternion
             view_settings[1], # View Quaternion
             view_settings[2], # Zoom
-            view_settings[3], # Palette
             )
 
         self.win.addObjects(self.clipped)
         self.win.imshow(show = False)
 
         if buffer : 
+            self.win.removeObjects(self.clipped)
             return self.buffer_to_image(buffer = io.BytesIO())
         else :
             plt.show()
+    
+    def tensor_image(self, name_setting : str, buffer = True) : 
+        return self.show(buffer = buffer, view_settings = self.dict_views[name_setting])
     
     
     
