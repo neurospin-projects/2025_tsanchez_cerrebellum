@@ -44,7 +44,7 @@ import torch.nn as nn
 class VAE(nn.Module):
     """ beta-VAE class
     """
-    def __init__(self, in_shape, n_latent, depth):
+    def __init__(self, in_shape, n_latent, depth, device = None):
         """
         Args:
             in_shape: tuple, input shape
@@ -52,6 +52,15 @@ class VAE(nn.Module):
             depth: int, depth of the model
         """
         super().__init__()
+
+        if device :
+            self.device = device
+        else : 
+            if torch.cuda.is_available() : 
+                self.device = "cuda:0" #Using default GPU
+            else : 
+                self.device = "cpu"
+        
         self.in_shape = in_shape
         self.n_latent = n_latent
         c,h,w,d = in_shape
@@ -115,7 +124,7 @@ class VAE(nn.Module):
                 nn.init.constant_(module.bias, 0)
 
     def sample_z(self, mean, logvar):
-        device = torch.device("cuda", index=0)
+        device = self.device
         stddev = torch.exp(0.5 * logvar)
         noise = Variable(torch.randn(stddev.size(), device=device))
         return (noise * stddev) + mean
