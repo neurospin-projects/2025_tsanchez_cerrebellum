@@ -8,11 +8,9 @@ import matplotlib.pyplot as plt
 import torch
 from pathlib import Path
 
-# Produce for one image all the views
 class VisualiserAnatomist :
     def __init__(self,
                  path_or_obj : Path,
-                 saving_path : Path,
                  dict_views : Dict,
                  anatomist,
                  window,
@@ -23,7 +21,6 @@ class VisualiserAnatomist :
         self.win.setHasCursor(0)
 
         self.path_or_obj = path_or_obj
-        self.saving_path = saving_path
 
         self.dict_views = dict_views
 
@@ -74,13 +71,13 @@ class VisualiserAnatomist :
                     clip_quaternion : aims.Quaternion,
                     view_quaternion : List,
                     zoom : float,
-                    palette : np.ndarray):
+                    ):
 
         palette = self.gen_palette()
-        # palette = self.gen_palette(palette)
+
         self.clipped.setQuaternion(clip_quaternion)
         self.clipped.setPalette(palette)
-        # print(self.clipped.getInfos())
+
         self.win.camera(view_quaternion = view_quaternion, zoom = zoom)
 
 
