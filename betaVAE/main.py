@@ -100,16 +100,17 @@ def train_model(config):
     train_set, val_set = torch.utils.data.random_split(dataset,
                             [round(0.8*len(dataset)), round(0.2*len(dataset))])
 
+    print("Prepare dataset : DONE !")
     #### * Making the data loader
     trainloader = torch.utils.data.DataLoader(
                   train_set,
                   batch_size=config.batch_size,
-                  num_workers=8,
+                  num_workers=1,
                   shuffle=True)
     valloader = torch.utils.data.DataLoader(
                 val_set,
                 batch_size=1,
-                num_workers=8,
+                num_workers=1,
                 shuffle=True)
 
     val_label = []
