@@ -5,7 +5,7 @@ from cerebellum_folding.data.path import MergedMaskPath
 from cerebellum_folding import UkbSubject
 from joblib import Parallel, delayed
 
-SAVING_PATH = Path("/neurospin/dico/tsanchez/preprocessed/UKBio1000")
+SAVING_PATH = Path("/neurospin/dico/tsanchez/preprocessed/ukb_test")
 PATH_CEREBELLUM_MASK = Path("/neurospin/dico/tsanchez/mask/cerebellum/27_ataxia_control_cerebellum.nii.gz")
 PATH_VERMIS_MASK = Path("/neurospin/dico/tsanchez/mask/vermis/27_ataxia_control_vermis.nii.gz")
 
@@ -13,7 +13,7 @@ WM_THRESH = -0.3967
 SULCI_THRESH = 0.464
 OUTPUT_VOXEL_SIZE = (0.5,0.5,0.5)
 
-NUMBER_SUBJECTS = 1000
+NUMBER_SUBJECTS = 16
 
 # Max number of subjects after filtering qc : 21045 
 qc_file = Path("/neurospin/dico/data/deep_folding/current/datasets/UkBioBank/qc_post.tsv")
@@ -34,6 +34,7 @@ masks = {
 
 delete_tmp_settings = {
     "rm_icbm" : False,
+    "rm_mean_curvature" : True,
     "rm_masked" : True,
     "rm_crop" : True,
 }
@@ -47,7 +48,7 @@ def run_pipe(path_sub):
         sulci_threshold=SULCI_THRESH,
         resample_output_voxel=OUTPUT_VOXEL_SIZE,
         verbose = False,
-        ).run_pipe(overwrite=True, dilatation=5,delete_tmp_settings=delete_tmp_settings)
+        ).run_pipe(overwrite=False, dilatation=5,delete_tmp_settings=delete_tmp_settings)
     print(f"Done : {path_sub.id} ")
 
 if __name__ == "__main__":
