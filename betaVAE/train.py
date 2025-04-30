@@ -36,11 +36,10 @@
 # https://github.com/neurospin-projects/2021_jchavas_lguillon_deepcingulate/
 
 import numpy as np
-import pandas as pd
-import torchvision
 from torchsummary import summary
 from torch.utils.tensorboard import SummaryWriter
 import torch.nn as nn
+import torch
 
 from beta_vae import *
 from utils.pytorchtools import EarlyStopping
@@ -64,15 +63,16 @@ def train_vae(config, trainloader, valloader, root_dir=None):
                             comment="")
 
     lr = config.lr
+    print(list(config.in_shape))
     vae = VAE(config.in_shape, config.n, depth=3)
     device = "cpu"
     if torch.cuda.is_available():
         device = "cuda:0"
     vae.to(device)
-    summary(vae, list(config.in_shape))
+    # summary(vae, list(config.in_shape))
 
-    weights = config.weights
-    class_weights = torch.FloatTensor(weights).to(device)
+    # weights = config.weights
+    # class_weights = torch.FloatTensor(weights).to(device)
     # ! Like if we chose that all the class are equal to 1
     criterion = nn.CrossEntropyLoss(weight=None, reduction='sum')
     optimizer = torch.optim.Adam(vae.parameters(), lr=lr)
@@ -112,10 +112,6 @@ def train_vae(config, trainloader, valloader, root_dir=None):
         recon_loss = recon_loss / epoch_steps
         kl_loss = kl_loss / epoch_steps
 
-        images = [inputs[0][0][10][:][:], output[0][10][:][:]]
-        grid = torchvision.utils.make_grid(images)
-        writer.add_image('inputs', images[0].unsqueeze(0), epoch)
-        writer.add_image('output', images[1].unsqueeze(0), epoch)
         writer.add_scalar('Loss/train', running_loss, epoch)
         writer.add_scalar('KL Loss/train', kl_loss, epoch)
         writer.add_scalar('recon Loss/train', recon_loss, epoch)
@@ -142,8 +138,8 @@ def train_vae(config, trainloader, valloader, root_dir=None):
         recon_loss_val = 0.0
         kl_val = 0.0
         val_steps = 0
-        total = 0
         vae.eval()
+
         for inputs, path in valloader:
             with torch.no_grad():
                 inputs = Variable(inputs).to(device, dtype=torch.float32)
@@ -163,13 +159,10 @@ def train_vae(config, trainloader, valloader, root_dir=None):
         recon_loss_val = recon_loss_val / val_steps
         kl_val = kl_val / val_steps
 
-        images = [inputs[0][0][10][:][:],\
-                  output[0][10][:][:]]
         writer.add_scalar('Loss/val', valid_loss, epoch)
         writer.add_scalar('KL Loss/val', kl_val, epoch)
         writer.add_scalar('recon Loss/val', recon_loss_val, epoch)
-        writer.add_image('inputs VAL', images[0].unsqueeze(0), epoch)
-        writer.add_image('output VAL', images[1].unsqueeze(0), epoch)
+
         writer.close()
 
         # prints on the terminal
