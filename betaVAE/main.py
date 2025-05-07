@@ -39,6 +39,7 @@
 import os
 import hydra
 from omegaconf import OmegaConf
+from pathlib import Path
 
 import numpy as np
 import torch
@@ -73,75 +74,44 @@ def train_model(config):
     torch.manual_seed(3) #same seed = same training ? yes, pourtant différents entraînements donnent des outputs diff ?
     # take random seed like contrastive and save it in logs / config ?
 
-    config.save_dir = config.save_dir + f"/{now:%Y-%m-%d}/{now:%H-%M-%S}/"
+    # * Adjusting model to adjust to model speficication
     config.in_shape = adjust_in_shape(config)
 
-    print(config)
+    now = datetime.now()
+    config.run_time = f"{now:%H-%M-%S}" #Making sure that output dict are matching
+    print(f"[INFO] Current working directory : {os.getcwd()}")
 
-    # create the save dir
-    try:
-        os.makedirs(config.save_dir)
-    except FileExistsError:
-        print("Directory " , config.save_dir ,  " already exists")
-        pass
-
-    # save config as a yaml file
-    with open(config.save_dir+"/config.yaml", "w") as f:
-        OmegaConf.save(config, f)
+    SAVING_PATH = Path(".")
 
     """ Load data and generate torch datasets """
-    # TODO Change this function to have a DataLoader
-    # ! The data stored in subset1.df is not reshaped, the reshaping is done in the __getitem__
     dataset = UkbDataset(config)
-
-
+    
     #### * Splitting the data
     # ! From here the shape of the tensor or the config.in_shape
     train_set, val_set = torch.utils.data.random_split(dataset,
                             [round(0.8*len(dataset)), round(0.2*len(dataset))])
 
+    print("Prepare dataset : DONE !")
     #### * Making the data loader
     trainloader = torch.utils.data.DataLoader(
                   train_set,
                   batch_size=config.batch_size,
-                  num_workers=8,
+                  num_workers=1,
                   shuffle=True)
     valloader = torch.utils.data.DataLoader(
                 val_set,
                 batch_size=1,
-                num_workers=8,
+                num_workers=1,
                 shuffle=True)
 
     val_label = []
     for _, path in valloader:
         val_label.append(path[0])
-    np.savetxt(f"{config.save_dir}/val_label.csv", np.array(val_label), delimiter =", ", fmt ='% s')
+    np.savetxt( SAVING_PATH / "val_label.csv", np.array(val_label), delimiter =", ", fmt ='% s')
 
     """ Train model for given configuration """
     ### * Training the model
-    vae, final_loss_val = train_vae(config, trainloader, valloader,
-                                    root_dir=config.save_dir)
-
-
-    # """ Evaluate model performances """
-    # dico_set_loaders = {'train': trainloader, 'val': valloader}
-    #
-    # tester = ModelTester(model=vae, dico_set_loaders=dico_set_loaders,
-    #                      kl_weight=config.kl, loss_func=criterion,
-    #                      n_latent=config.n, depth=3)
-    #
-    # results = tester.test()
-    # encoded = {loader_name:[results[loader_name][k] for k in results[loader_name].keys()] for loader_name in dico_set_loaders.keys()}
-    # df_encoded = pd.DataFrame()
-    # df_encoded['latent'] = encoded['train'] + encoded['val']
-    # X = np.array(list(df_encoded['latent']))
-    #
-    # cluster = Cluster(X, save_dir)
-    # res = cluster.plot_silhouette()
-    # res['loss_val'] = final_loss_val
-    #
-    # with open(f"{save_dir}results_test.json", "w") as json_file:
-    #     json_file.write(json.dumps(res, sort_keys=True, indent=4))
+    vae, final_loss_val = train_vae(config, trainloader, valloader)
 
 if __name__ == '__main__':
     train_model()
