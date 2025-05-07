@@ -36,18 +36,34 @@
 # https://github.com/neurospin-projects/2021_jchavas_lguillon_deepcingulate/
 
 import numpy as np
+import os
 from torchsummary import summary
 from torch.utils.tensorboard import SummaryWriter
 import torch.nn as nn
 import torch
+from pathlib import Path
 
 from beta_vae import *
 from utils.pytorchtools import EarlyStopping
 
 from postprocess import plot_loss
 
+def retrieve_counts(torch_unique):
+    # torch.Tensor.unique(return_counts= True)
+    values = torch_unique[0].tolist()
+    counts = torch_unique[1].tolist()
+    tmp_dict = dict(zip(values,counts))
+    dict_count = dict()
+    for i in [0,1,2] : # Specific to the cerebellym case (values are in this list)
+        if i in tmp_dict.keys():
+            dict_count[i] = tmp_dict[i]
+        else :
+            dict_count[i] = 0
+    return dict_count
 
-def train_vae(config, trainloader, valloader, root_dir=None):
+
+
+def train_vae(config, trainloader, valloader):
     """ Trains beta-VAE for a given hyperparameter configuration
     Args:
         config: instance of class Config
@@ -59,26 +75,35 @@ def train_vae(config, trainloader, valloader, root_dir=None):
         final_loss_val
     """
     torch.manual_seed(5)
-    writer = SummaryWriter(log_dir= config.save_dir+'logs/',
+    SAVING_PATH = Path(os.getcwd())
+    LOGDIR = SAVING_PATH / "logs"
+    
+
+    writer = SummaryWriter(log_dir=LOGDIR,
                             comment="")
 
+    print(f"Saving Tensorboard : {LOGDIR}")
+
+    # * Retrieving settings
     lr = config.lr
-    print(list(config.in_shape))
-    vae = VAE(config.in_shape, config.n, depth=3)
+
     device = "cpu"
     if torch.cuda.is_available():
         device = "cuda:0"
+
+    vae = VAE(config.in_shape, config.n, depth=3)
     vae.to(device)
+
     # summary(vae, list(config.in_shape))
 
-    # weights = config.weights
-    # class_weights = torch.FloatTensor(weights).to(device)
-    # ! Like if we chose that all the class are equal to 1
-    criterion = nn.CrossEntropyLoss(weight=None, reduction='sum')
+    weights = config.weights
+    class_weights = torch.FloatTensor(weights).to(device)
+
+    criterion = nn.CrossEntropyLoss(weight=class_weights, reduction='sum')
     optimizer = torch.optim.Adam(vae.parameters(), lr=lr)
 
     nb_epoch = config.nb_epoch
-    early_stopping = EarlyStopping(patience=12, verbose=True, root_dir=root_dir)
+    early_stopping = EarlyStopping(patience=12, verbose=True, root_dir=SAVING_PATH)
 
     list_loss_train, list_loss_val = [], []
 
@@ -113,16 +138,26 @@ def train_vae(config, trainloader, valloader, root_dir=None):
         recon_loss = recon_loss / epoch_steps
         kl_loss = kl_loss / epoch_steps
 
+
+        # Retrieving counts of the output
+        counts_output = retrieve_counts(output.unique(return_counts=True))
+
+        writer.add_scalar('Count_wm/train', counts_output[0], epoch)
+        writer.add_scalar('Count_empt/train', counts_output[1], epoch)
+        writer.add_scalar('Counts_sulci/train', counts_output[2], epoch)
+
+        # Writing loss
         writer.add_scalar('Loss/train', running_loss, epoch)
         writer.add_scalar('KL Loss/train', kl_loss, epoch)
         writer.add_scalar('recon Loss/train', recon_loss, epoch)
         writer.close()
 
+        print(f"[TRAIN] Values in output : {list(counts_output.keys())}")
+        print(f"[TRAIN] Counts in output : {list(counts_output.values())}")
         print("[%d] KL loss: %.2e" % (epoch + 1, kl_loss))
         print("[%d] recon loss: %.2e" % (epoch + 1, recon_loss))
-        #print(kl_loss * config.kl + recon_loss)
-        print("[%d] loss: %.2e" % (epoch + 1,
-                                        running_loss))
+        print("[%d] loss: %.2e" % (epoch + 1, running_loss))
+
         list_loss_train.append(running_loss)
         running_loss = 0.0
 
@@ -159,19 +194,32 @@ def train_vae(config, trainloader, valloader, root_dir=None):
         recon_loss_val = recon_loss_val / val_steps
         kl_val = kl_val / val_steps
 
+
+        counts_output = retrieve_counts(output.unique(return_counts=True))
+
+        writer.add_scalar('Count_wm/val', counts_output[0], epoch)
+        writer.add_scalar('Count_empt/val', counts_output[1], epoch)
+        writer.add_scalar('Counts_sulci/val', counts_output[2], epoch)
+
         writer.add_scalar('Loss/val', valid_loss, epoch)
         writer.add_scalar('KL Loss/val', kl_val, epoch)
         writer.add_scalar('recon Loss/val', recon_loss_val, epoch)
 
+    
         writer.close()
 
         # prints on the terminal
+        print(f"[VAL] Values in output : {list(counts_output.keys())}")
+        print(f"[VAL] Counts in output : {list(counts_output.values())}")
         print("[%d] KL validation loss: %.2e" % (epoch + 1, kl_val))
         print("[%d] recon validation loss: %.2e" % (epoch + 1, recon_loss_val))
-        #print(kl_val * config.kl + recon_loss_val)
         print("[%d] validation loss: %.2e" % (epoch + 1, valid_loss))
+
         list_loss_val.append(valid_loss)
 
+        print("\n __________________ \n")
+
+        # * Checking if early stopping needed
         early_stopping(valid_loss, vae)
 
         """ Saving of reconstructions for visualization in Anatomist software """
@@ -181,22 +229,22 @@ def train_vae(config, trainloader, valloader, root_dir=None):
                 phase_arr.append('val')
                 input_arr.append(np.array(np.squeeze(inputs[k]).cpu().detach().numpy()))
                 output_arr.append(np.squeeze(output[k]).cpu().detach().numpy())
-            # break
 
         if early_stopping.early_stop or epoch == nb_epoch -1:
             break
 
     for key, array in {'input': input_arr, 'output' : output_arr,
                            'phase': phase_arr, 'id': id_arr}.items():
-        np.save(config.save_dir+key, np.array([array]))
+        np.save(SAVING_PATH / key, np.array([array]))
 
-    plot_loss(list_loss_train[1:], config.save_dir+'tot_train_')
-    plot_loss(list_loss_val[1:], config.save_dir+'tot_val_')
+    # plot_loss(list_loss_train[1:], config.save_dir+'tot_train_')
+    # plot_loss(list_loss_val[1:], config.save_dir+'tot_val_')
+
     final_loss_val = list_loss_val[-1:]
 
     """Saving of trained model"""
     torch.save((vae.state_dict(), optimizer.state_dict()),
-                config.save_dir + 'vae.pt')
+                SAVING_PATH / 'vae.pt')
 
     print("Finished Training")
     return vae, final_loss_val
