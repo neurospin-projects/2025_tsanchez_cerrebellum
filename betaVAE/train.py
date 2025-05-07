@@ -87,14 +87,13 @@ def train_vae(config, trainloader, valloader):
     # * Retrieving settings
     lr = config.lr
 
-    print(list(config.in_shape))
-    vae = VAE(config.in_shape, config.n, depth=3, nb_channel= 2)
 
     device = "cpu"
     if torch.cuda.is_available():
         device = "cuda:0"
 
-    vae = VAE(config.in_shape, config.n, depth=3)
+    print(list(config.in_shape))
+    vae = VAE(config.in_shape, config.n, depth=3, nb_channel= 2)
     vae.to(device)
 
     # summary(vae, list(config.in_shape))
@@ -118,13 +117,15 @@ def train_vae(config, trainloader, valloader):
         recon_loss = 0.0
         kl_loss = 0.0
         epoch_steps = 0
-        for inputs, path in trainloader:
+        for inputs, target, path in trainloader:
             optimizer.zero_grad()
 
             inputs = Variable(inputs).to(device, dtype=torch.float32)
 
             # ! Cross entropy doesn't take negative values so added 1 to each class
-            target = torch.squeeze(inputs, dim=1).long() + 1
+            target = target.squeeze(1).long() + 1
+            target = target.to(device)
+
             output, z, logvar = vae(inputs)
             partial_recon_loss, partial_kl, loss = vae_loss(output, target, z,
                                     logvar, criterion,
@@ -178,12 +179,13 @@ def train_vae(config, trainloader, valloader):
         val_steps = 0
         vae.eval()
 
-        for inputs, path in valloader:
+        for inputs, target, path in valloader:
             with torch.no_grad():
                 inputs = Variable(inputs).to(device, dtype=torch.float32)
                 output, z, logvar = vae(inputs)
             # ! Cross entropy doesn't take negative values so added 1 to each class
-                target = torch.squeeze(inputs, dim=1).long() + 1
+                target = target.squeeze(1).long() + 1
+                target = target.to(device)
                 partial_recon_loss_val, partial_kl_val, loss = vae_loss(output, target,
                                         z, logvar, criterion,
                                         kl_weight=config.kl)

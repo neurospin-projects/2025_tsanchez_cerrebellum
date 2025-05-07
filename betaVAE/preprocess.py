@@ -121,7 +121,7 @@ class UkbDataset(Dataset) :
         sulci_tens = torch.where(volume_tensor == 1, 1, 0)
         split_channel_vol = torch.stack([white_mat_tens, sulci_tens])
 
-        return split_channel_vol, subject
+        return split_channel_vol, volume_tensor.unsqueeze(0), subject
 
         
 class Padding(object):

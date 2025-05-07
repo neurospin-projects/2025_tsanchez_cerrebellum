@@ -38,18 +38,18 @@
 
 import os
 import hydra
-from omegaconf import OmegaConf
 from pathlib import Path
 
 import numpy as np
 import torch
 
-from datetime import datetime
-now = datetime.now()
-
 from train import train_vae
 from utils.config import process_config
 from preprocess import UkbDataset
+
+from datetime import datetime
+now = datetime.now()
+
 
 def adjust_in_shape(config):
     """
@@ -105,7 +105,7 @@ def train_model(config):
                 shuffle=True)
 
     val_label = []
-    for _, path in valloader:
+    for _, _, path in valloader:
         val_label.append(path[0])
     np.savetxt( SAVING_PATH / "val_label.csv", np.array(val_label), delimiter =", ", fmt ='% s')
 
