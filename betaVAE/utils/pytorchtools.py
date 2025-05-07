@@ -43,6 +43,7 @@ class EarlyStopping:
         else:
             self.best_score = score
             self.save_checkpoint(val_loss, model, self.root_dir)
+            # print(f"Saving checkpoint at : {self.root_dir / 'checkpoint.pt'} ")
             self.counter = 0
 
     def save_checkpoint(self, val_loss, model, root_dir):
@@ -50,5 +51,5 @@ class EarlyStopping:
         if self.verbose:
             print(
                 f'Validation loss decreased ({self.val_loss_min:.6f} --> {val_loss:.6f}).  Saving model ...')
-        torch.save(model.state_dict(), self.root_dir + 'checkpoint.pt')
+        torch.save(model.state_dict(), self.root_dir / 'checkpoint.pt')
         self.val_loss_min = val_loss
