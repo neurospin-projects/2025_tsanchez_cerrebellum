@@ -44,7 +44,7 @@ import torch.nn as nn
 class VAE(nn.Module):
     """ beta-VAE class
     """
-    def __init__(self, in_shape, n_latent, depth, device = None, nb_channel : bool = None):
+    def __init__(self, in_shape, n_latent, depth, device = None, nb_channel : int = None):
         """
         Args:
             in_shape: tuple, input shape
