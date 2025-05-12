@@ -1,9 +1,7 @@
 from typing import Dict, List, Tuple
-import PIL
-import io
+import os
 from soma import aims
 import numpy as np
-from torchvision.transforms import ToTensor
 import matplotlib.pyplot as plt
 import torch
 from pathlib import Path
@@ -157,17 +155,8 @@ class VisualiserAnatomist :
         pal.np["v"][400:,:,:,:,0] = 255 # Settings end to red max
 
         return pal
-        
-    @staticmethod
-    def buffer_to_image(buffer):
-        plt.savefig(buffer, format = "png")
-        buffer.seek(0)
-        plt.close("all")
-        image = PIL.Image.open(buffer)
-        image = ToTensor()(image).unsqueeze(0)[0]
-        return image
     
-    def show(self, buffer :bool, view_settings : Tuple):
+    def show(self, path : Path,  view_settings : Tuple):
         self.positioning(
             view_settings[0], # Slice Quaternion
             view_settings[1], # View Quaternion
@@ -175,16 +164,13 @@ class VisualiserAnatomist :
             )
 
         self.win.addObjects(self.clipped)
-        self.win.imshow(show = False)
+        self.win.snapshot(str(path), height=2000, width=2000)
+        self.win.removeObjects(self.clipped)
 
-        if buffer : 
-            self.win.removeObjects(self.clipped)
-            return self.buffer_to_image(buffer = io.BytesIO())
-        else :
-            plt.show()
+        return path
     
-    def tensor_image(self, name_setting : str) : 
-        return self.show(buffer = True, view_settings = self.dict_views[name_setting])
+    def save_image(self,path : Path, name_setting : str) : 
+        return self.show(path = path, view_settings = self.dict_views[name_setting])
 
 
 class VisualiseExperiment :
@@ -199,10 +185,13 @@ class VisualiseExperiment :
             self.root_exp = Path(root_experiment)
             self.root_data = Path(root_dataset)
             self.vae_settings = vae_settings
-            self.dataloader = UkbDataset(config = {
-                "root" : self.root_data,
-                "in_shape" : self.vae_settings["in_shape"]
-            })
+
+            self.visu_path = self.root_exp / "visualisation"
+
+            try : 
+                os.mkdir(self.visu_path)
+            except Exception as e : 
+                print(e)
 
             self.paths = {}
             self.paths["model"] = self.root_exp / "vae.pt"
@@ -225,19 +214,19 @@ class VisualiseExperiment :
         inputs_arr = np.squeeze(np.load(self.paths["training"]["input"]).astype(np.int16))
         outputs_arr = np.squeeze(np.load(self.paths["training"]["output"]).astype(np.int16))
 
-        visu_inputs = [converter_RBGA(VisualiserAnatomist(
+        visu_inputs = [plt.imread(VisualiserAnatomist(
             path_or_obj=np_obj, 
             dict_views= DICT_VIEWS, 
             anatomist = anatomist,
             window = win
-        ).tensor_image("normal")) for np_obj in inputs_arr]
+        ).save_image(path = self.visu_path / f"input_{str(ind).zfill(2)}.png", name_setting="normal")) for ind,np_obj in enumerate(inputs_arr)]
 
-        visu_outputs = [converter_RBGA(VisualiserAnatomist(
+        visu_outputs = [plt.imread(VisualiserAnatomist(
             path_or_obj=np_obj, 
             dict_views= DICT_VIEWS, 
             anatomist = anatomist,
             window = win
-        ).tensor_image("normal")) for np_obj in outputs_arr]
+        ).save_image(path = self.visu_path / f"output_{str(ind).zfill(2)}.png",name_setting="normal")) for ind, np_obj in enumerate(outputs_arr)]
 
         n_sub = len(self.id_arr)
         fig, axes = plt.subplots(n_sub, 2, figsize=(8, n_sub*4))
@@ -259,6 +248,11 @@ class VisualiseExperiment :
                     ):
 
         # assert subject in self.dataloader.list_subjects, "Subject not in the preprocessed sub"
+        self.dataloader = UkbDataset(config = {
+            "root" : self.root_data,
+            "in_shape" : self.vae_settings["in_shape"]
+        })
+
         win_input = anatomist.createWindow("3D")
         win_output = anatomist.createWindow("3D")
 
