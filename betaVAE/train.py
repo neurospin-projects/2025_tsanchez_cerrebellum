@@ -37,7 +37,6 @@
 
 import numpy as np
 import os
-from torchsummary import summary
 from torch.utils.tensorboard import SummaryWriter
 import torch.nn as nn
 import torch
@@ -46,7 +45,6 @@ from pathlib import Path
 from beta_vae import *
 from utils.pytorchtools import EarlyStopping
 
-from postprocess import plot_loss
 
 def retrieve_counts(torch_unique):
     # torch.Tensor.unique(return_counts= True)
@@ -108,7 +106,7 @@ def train_vae(config, trainloader, valloader):
     list_loss_train, list_loss_val = [], []
 
     # arrays enabling to see model reconstructions
-    id_arr, phase_arr, input_arr, output_arr = [], [], [], []
+    id_arr, phase_arr, input_arr, output_arr, epoch_arr, wm_count, emp_count, sulci_count= [], [], [], [], [], [], [], []
 
     for epoch in range(config.nb_epoch):
         running_loss = 0.0
@@ -142,6 +140,11 @@ def train_vae(config, trainloader, valloader):
         # Retrieving counts of the output
         counts_output = retrieve_counts(output.unique(return_counts=True))
 
+        # Simple metric to visualise where there are non zeros
+        custom_metric = counts_output[0] * counts_output[1] * counts_output[2]
+
+        writer.add_scalar('nonZeros/train', custom_metric, epoch)
+
         writer.add_scalar('Count_wm/train', counts_output[0], epoch)
         writer.add_scalar('Count_empt/train', counts_output[1], epoch)
         writer.add_scalar('Counts_sulci/train', counts_output[2], epoch)
@@ -161,12 +164,12 @@ def train_vae(config, trainloader, valloader):
         list_loss_train.append(running_loss)
         running_loss = 0.0
 
-        if (epoch%30) == 0:
-            for k in range(len(path)):
-                id_arr.append(path[k])
-                phase_arr.append('train')
-                input_arr.append(np.array(np.squeeze(inputs[k]).cpu().detach().numpy()))
-                output_arr.append(np.squeeze(output[k]).cpu().detach().numpy())
+        if (epoch%5) == 0:
+            id_arr.append(path[0])
+            phase_arr.append('train')
+            input_arr.append(np.array(np.squeeze(inputs[0]).cpu().detach().numpy()))
+            output_arr.append(np.squeeze(output[0]).cpu().detach().numpy())
+            epoch_arr.append(epoch)
 
         # Validation loss
         val_loss = 0.0
@@ -197,6 +200,11 @@ def train_vae(config, trainloader, valloader):
 
         counts_output = retrieve_counts(output.unique(return_counts=True))
 
+        # Simple metric to visualise where there are non zeros
+        custom_metric = counts_output[0] * counts_output[1] * counts_output[2]
+
+        writer.add_scalar('nonZeros/val', custom_metric, epoch)
+
         writer.add_scalar('Count_wm/val', counts_output[0], epoch)
         writer.add_scalar('Count_empt/val', counts_output[1], epoch)
         writer.add_scalar('Counts_sulci/val', counts_output[2], epoch)
@@ -223,18 +231,28 @@ def train_vae(config, trainloader, valloader):
         early_stopping(valid_loss, vae)
 
         """ Saving of reconstructions for visualization in Anatomist software """
-        if (epoch%30 == 0):
-            for k in range(len(path)):
-                id_arr.append(path[k])
-                phase_arr.append('val')
-                input_arr.append(np.array(np.squeeze(inputs[k]).cpu().detach().numpy()))
-                output_arr.append(np.squeeze(output[k]).cpu().detach().numpy())
+        if (epoch%5) == 0:
+            id_arr.append(path[0])
+            phase_arr.append('val')
+            input_arr.append(np.array(np.squeeze(inputs[0]).cpu().detach().numpy()))
+            output_arr.append(np.squeeze(output[0]).cpu().detach().numpy())
+            epoch_arr.append(epoch)
+            wm_count.append(counts_output[0])
+            emp_count.append(counts_output[1])
+            sulci_count.append(counts_output[2])
 
         if early_stopping.early_stop or epoch == nb_epoch -1:
             break
 
-    for key, array in {'input': input_arr, 'output' : output_arr,
-                           'phase': phase_arr, 'id': id_arr}.items():
+    for key, array in {'input': input_arr,
+                       'output' : output_arr,
+                        'phase': phase_arr,
+                        'id': id_arr,
+                        'epoch_val' : epoch_arr,
+                        'wm_count' : wm_count,
+                        'emp_count' : emp_count,
+                        'sulci_count' : sulci_count
+                        }.items():
         np.save(SAVING_PATH / key, np.array([array]))
 
     # plot_loss(list_loss_train[1:], config.save_dir+'tot_train_')

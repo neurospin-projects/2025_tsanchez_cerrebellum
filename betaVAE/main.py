@@ -38,18 +38,19 @@
 
 import os
 import hydra
-from omegaconf import OmegaConf
 from pathlib import Path
 
 import numpy as np
 import torch
 
-from datetime import datetime
-now = datetime.now()
-
 from train import train_vae
 from utils.config import process_config
 from preprocess import UkbDataset
+
+from datetime import datetime
+
+now = datetime.now()
+
 
 def adjust_in_shape(config):
     """
