@@ -201,6 +201,7 @@ class VisualiseExperiment :
                 "output" : self.root_exp / "output.npy",
                 "phase" : self.root_exp / "phase.npy",
                 "id" : self.root_exp / "id.npy",
+                "epoch" : self.root_exp / "epoch_val.npy"
             }
 
             self.phase_arr = np.squeeze(np.load(self.paths["training"]["phase"]))
@@ -213,6 +214,7 @@ class VisualiseExperiment :
         #Loading images
         inputs_arr = np.squeeze(np.load(self.paths["training"]["input"]).astype(np.int16))
         outputs_arr = np.squeeze(np.load(self.paths["training"]["output"]).astype(np.int16))
+        epoch_arr = np.squeeze(np.load(self.paths["training"]["epoch"]).astype(np.int16))
 
         visu_inputs = [plt.imread(VisualiserAnatomist(
             path_or_obj=np_obj, 
@@ -229,13 +231,14 @@ class VisualiseExperiment :
         ).save_image(path = self.visu_path / f"output_{str(ind).zfill(2)}.png",name_setting="normal")) for ind, np_obj in enumerate(outputs_arr)]
 
         n_sub = len(self.id_arr)
-        fig, axes = plt.subplots(n_sub, 2, figsize=(8, n_sub*4))
-        for i in range(n_sub):
-            axes[i,0].set_axis_off()
-            axes[i,1].set_axis_off()
-            axes[i,0].set_title(self.id_arr[i])
-            axes[i,0].imshow(visu_inputs[i], aspect="equal")
-            axes[i,1].imshow(visu_outputs[i], aspect="equal")
+        n_row = n_sub // 3
+        fig, axes = plt.subplots(n_row, 6, figsize=(25, n_row*5))
+        for ind,ax in enumerate(axes.ravel()):
+            div, mod = divmod(ind,2)
+            to_plot = visu_inputs if mod == 0 else visu_outputs
+            ax.set_axis_off()
+            ax.set_title(f"{self.id_arr[div]} / epoch {epoch_arr[div]} / {self.phase_arr[div]}")
+            ax.imshow(to_plot[div], aspect="equal")
         plt.subplots_adjust(wspace=0.01, hspace=0.05)
         fig.savefig(self.root_exp / "fig_evolution.png", format = "png")
         
