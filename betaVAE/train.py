@@ -240,6 +240,9 @@ def train_vae(config, trainloader, valloader):
             wm_count.append(counts_output[0])
             emp_count.append(counts_output[1])
             sulci_count.append(counts_output[2])
+            if custom_metric != 0 :
+                torch.save((vae.state_dict(), optimizer.state_dict()),
+                            SAVING_PATH / f'training_{epoch}.pt')
 
         if early_stopping.early_stop or epoch == nb_epoch -1:
             break
@@ -254,9 +257,6 @@ def train_vae(config, trainloader, valloader):
                         'sulci_count' : sulci_count
                         }.items():
         np.save(SAVING_PATH / key, np.array([array]))
-
-    # plot_loss(list_loss_train[1:], config.save_dir+'tot_train_')
-    # plot_loss(list_loss_val[1:], config.save_dir+'tot_val_')
 
     final_loss_val = list_loss_val[-1:]
 
