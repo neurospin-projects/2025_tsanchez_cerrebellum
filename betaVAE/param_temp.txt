@@ -1,0 +1,10 @@
+job_name="Test_name"
+output="Output_test%j.out"
+error="Output_test%j.err"
+
+kl=8
+lr=1e-4
+n=75
+nb_epoch=150
+batch_size=32
+weights=[3,1,3]
