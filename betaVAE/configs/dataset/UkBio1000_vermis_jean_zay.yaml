@@ -1,5 +1,5 @@
 # @package _global_
-dataset_name: Ukbio1000_vermis
+dataset_name: Ukbio1000_vermis_JZ
 data_root: "/lustre/fswork/projects/rech/tgu/uyf32do/Runs/01_hyperparameter_betaVAE/Input/UKBio1000"
 save_dir: "/lustre/fswork/projects/rech/tgu/uyf32do/Runs/01_hyperparameter_betaVAE/Output"
 in_shape: [1, 54, 120, 139]
