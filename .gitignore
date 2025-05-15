@@ -1,7 +1,7 @@
 **/deep_folding
 **/__pycache__/
 */**/cerebellum_folding
-**/betaVAE
+Runs/*/betaVAE
 # pixi environments
 .pixi
 *.egg-info
