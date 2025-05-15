@@ -187,6 +187,7 @@ class VisualiseExperiment :
             self.vae_settings = vae_settings
 
             self.visu_path = self.root_exp / "visualisation"
+            print(f"\n [CREATING PATH] {self.visu_path} \n")
 
             try : 
                 os.mkdir(self.visu_path)
@@ -206,41 +207,72 @@ class VisualiseExperiment :
 
             self.phase_arr = np.squeeze(np.load(self.paths["training"]["phase"]))
             self.id_arr = np.squeeze(np.load(self.paths["training"]["id"]))
+            #Loading images
+            self.inputs_arr = np.squeeze(np.load(self.paths["training"]["input"]).astype(np.int16))
+            self.outputs_arr = np.squeeze(np.load(self.paths["training"]["output"]).astype(np.int16))
+            self.epoch_arr = np.squeeze(np.load(self.paths["training"]["epoch"]).astype(np.int16))
 
-    def plot_training(self):
+    def plot_training(self,save_full : bool):
         anatomist = anahead.Anatomist()
         win = anatomist.createWindow("3D")
-
-        #Loading images
-        inputs_arr = np.squeeze(np.load(self.paths["training"]["input"]).astype(np.int16))
-        outputs_arr = np.squeeze(np.load(self.paths["training"]["output"]).astype(np.int16))
-        epoch_arr = np.squeeze(np.load(self.paths["training"]["epoch"]).astype(np.int16))
 
         visu_inputs = [plt.imread(VisualiserAnatomist(
             path_or_obj=np_obj, 
             dict_views= DICT_VIEWS, 
             anatomist = anatomist,
             window = win
-        ).save_image(path = self.visu_path / f"input_{str(ind).zfill(2)}.png", name_setting="normal")) for ind,np_obj in enumerate(inputs_arr)]
+        ).save_image(path = self.visu_path / f"input_{str(ind).zfill(2)}.png", name_setting="normal")) for ind,np_obj in enumerate(self.inputs_arr)]
 
         visu_outputs = [plt.imread(VisualiserAnatomist(
             path_or_obj=np_obj, 
             dict_views= DICT_VIEWS, 
             anatomist = anatomist,
             window = win
-        ).save_image(path = self.visu_path / f"output_{str(ind).zfill(2)}.png",name_setting="normal")) for ind, np_obj in enumerate(outputs_arr)]
+        ).save_image(path = self.visu_path / f"output_{str(ind).zfill(2)}.png",name_setting="normal")) for ind, np_obj in enumerate(self.outputs_arr)]
 
-        n_sub = len(self.id_arr)
-        n_row = n_sub // 3
-        fig, axes = plt.subplots(n_row, 6, figsize=(25, n_row*5))
+        if save_full : 
+            n_sub = len(self.id_arr)
+            n_row = n_sub // 3
+            fig, axes = plt.subplots(n_row, 6, figsize=(25, n_row*5))
+            for ind,ax in enumerate(axes.ravel()):
+                div, mod = divmod(ind,2)
+                to_plot = visu_inputs if mod == 0 else visu_outputs
+                ax.set_axis_off()
+                ax.set_title(f"{self.id_arr[div]} / epoch {self.epoch_arr[div]} / {self.phase_arr[div]}")
+                ax.imshow(to_plot[div], aspect="equal")
+            plt.subplots_adjust(wspace=0.01, hspace=0.05)
+            fig.savefig(self.root_exp / "fig_evolution.png", format = "png")
+    
+    def plt_plot(self,start, stop):
+        nb_pic = len(self.inputs_arr)
+        print(f" NB pictures : {nb_pic}")
+        input_paths = [
+            self.visu_path / f"input_{str(ind).zfill(2)}.png" 
+            for ind in range(start, stop + 1)
+        ]
+        visu_input = [plt.imread(path) for path in input_paths]
+
+        output_paths = [
+            self.visu_path / f"output_{str(ind).zfill(2)}.png" 
+            for ind in range(start, stop + 1)
+        ]
+        visu_output = [plt.imread(path) for path in output_paths]
+
+        phase_to_plot = self.phase_arr[start:stop + 1]
+        id_to_plot = self.id_arr[start:stop + 1]
+        epoch_to_plot = self.epoch_arr[start:stop + 1]
+
+        n_row = len(visu_input) // 4
+        fig, axes = plt.subplots(n_row, 8, figsize=(32, n_row*5))
         for ind,ax in enumerate(axes.ravel()):
             div, mod = divmod(ind,2)
-            to_plot = visu_inputs if mod == 0 else visu_outputs
+            to_plot = visu_input if mod == 0 else visu_output
             ax.set_axis_off()
-            ax.set_title(f"{self.id_arr[div]} / epoch {epoch_arr[div]} / {self.phase_arr[div]}")
+            ax.set_title(f"{id_to_plot[div]} / epoch {epoch_to_plot[div]} / {phase_to_plot[div]}")
             ax.imshow(to_plot[div], aspect="equal")
         plt.subplots_adjust(wspace=0.01, hspace=0.05)
         fig.savefig(self.root_exp / "fig_evolution.png", format = "png")
+
         
     
     def view_inference(self,
