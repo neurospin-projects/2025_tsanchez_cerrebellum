@@ -1,0 +1,5 @@
+# @package _global_
+dataset_name: Ukbio1000_vermis
+data_root: "/neurospin/dico/data/cerebellum/datasets/Ukbio"
+save_dir: "/neurospin/dico/tsanchez/Test_BetaVAE"
+in_shape: [1, 54, 120, 139]
