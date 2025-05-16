@@ -153,7 +153,7 @@ class VAE(nn.Module):
 def vae_loss(output, inputs, mean, logvar, loss_func, kl_weight):
     kl_loss = -0.5 * torch.sum(-torch.exp(logvar) - mean**2 + 1. + logvar)
     recon_loss = loss_func(output, inputs)
-    return recon_loss, kl_loss, recon_loss + kl_weight * kl_loss
+    return recon_loss, kl_loss, 1000*recon_loss + 1000*(kl_weight * kl_loss)
 
 
 class ModelTester():

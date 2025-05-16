@@ -97,11 +97,11 @@ def train_vae(config, trainloader, valloader):
     weights = config.weights
     class_weights = torch.FloatTensor(weights).to(device)
 
-    criterion = nn.CrossEntropyLoss(weight=class_weights, reduction='sum')
+    criterion = nn.CrossEntropyLoss(weight=class_weights, reduction='mean')
     optimizer = torch.optim.Adam(vae.parameters(), lr=lr)
 
     nb_epoch = config.nb_epoch
-    early_stopping = EarlyStopping(patience=12, verbose=True, root_dir=SAVING_PATH)
+    early_stopping = EarlyStopping(patience=35, verbose=True, root_dir=SAVING_PATH)
 
     list_loss_train, list_loss_val = [], []
 
@@ -240,7 +240,7 @@ def train_vae(config, trainloader, valloader):
             wm_count.append(counts_output[0])
             emp_count.append(counts_output[1])
             sulci_count.append(counts_output[2])
-            if custom_metric != 0 :
+            if custom_metric != 0 and epoch%20==0 :
                 torch.save((vae.state_dict(), optimizer.state_dict()),
                             SAVING_PATH / f'training_{epoch}.pt')
 
