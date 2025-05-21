@@ -28,5 +28,5 @@ module purge
 module load pytorch-gpu/py3/2.4.0
 set -x
 
-srun python main.py kl=$kl n=$n lr=$lr nb_epoch=$nb_epoch batch_size=$batch_size weights=$weights
+srun python main.py kl=$kl n=$n lr=$lr nb_epoch=$nb_epoch batch_size=$batch_size weights=$weights suffix_dir=$RANDOM
 EOF
