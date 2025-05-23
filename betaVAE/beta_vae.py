@@ -84,10 +84,11 @@ class VAE(nn.Module):
         self.encoder = nn.Sequential(OrderedDict(modules_encoder))
 
         # Flatten of the input : nb_filter = 16 * 2**depth
+        nb_filters = 16* (2**(depth - 1))
 
-        self.z_mean = nn.Linear(64 * self.z_dim_h * self.z_dim_w* self.z_dim_d, n_latent)
-        self.z_var = nn.Linear(64 * self.z_dim_h * self.z_dim_w* self.z_dim_d, n_latent)
-        self.z_develop = nn.Linear(n_latent, 64 *self.z_dim_h * self.z_dim_w* self.z_dim_d)
+        self.z_mean = nn.Linear(nb_filters * self.z_dim_h * self.z_dim_w* self.z_dim_d, n_latent)
+        self.z_var = nn.Linear(nb_filters * self.z_dim_h * self.z_dim_w* self.z_dim_d, n_latent)
+        self.z_develop = nn.Linear(n_latent, nb_filters *self.z_dim_h * self.z_dim_w* self.z_dim_d)
 
         modules_decoder = []
         for step in range(depth-1):

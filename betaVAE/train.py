@@ -89,7 +89,7 @@ def train_vae(config, trainloader, valloader):
     if torch.cuda.is_available():
         device = "cuda:0"
 
-    vae = VAE(config.in_shape, config.n, depth=3)
+    vae = VAE(config.in_shape, config.n, depth=config.depth)
     vae.to(device)
 
     # summary(vae, list(config.in_shape))
