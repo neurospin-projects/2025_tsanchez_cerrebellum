@@ -152,8 +152,18 @@ class VAE(nn.Module):
 
 def vae_loss(output, inputs, mean, logvar, loss_func, kl_weight):
     kl_loss = -0.5 * torch.sum(-torch.exp(logvar) - mean**2 + 1. + logvar)
-    recon_loss = loss_func(output, inputs)
-    return recon_loss, kl_loss, 1000*recon_loss + 1000*(kl_weight * kl_loss)
+    fft_loss = fourier_loss(output, inputs)
+    recon_loss = loss_func(output, inputs) 
+    return recon_loss, fft_loss, kl_loss, (1000*recon_loss + fft_loss) + (kl_weight * kl_loss)
+
+def fourier_loss(output, inputs):
+    input_fft = torch.fft.fftn(inputs, dim=(2,3,4))
+    output_fft = torch.fft.fftn(output, dim=(2,3,4))
+
+    mag_input = torch.abs(input_fft)
+    mag_output = torch.abs(output_fft)
+
+    return torch.nn.functional.mse_loss(mag_input, mag_output)
 
 
 class ModelTester():

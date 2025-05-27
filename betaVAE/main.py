@@ -65,7 +65,7 @@ def adjust_in_shape(config):
         if r!=0:
             dim+=(2**config.depth-r)
         dims.append(dim)
-    return((1, dims[0]+4, dims[1], dims[2])) # ! removed dim[0]+4 because it was strange
+    return((1, dims[0]+(2**(config.depth - 1)), dims[1], dims[2])) # ! removed dim[0]+4 because it was strange
 
 @hydra.main(config_name='config', version_base="1.1", config_path="configs")
 def train_model(config):
