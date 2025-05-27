@@ -106,7 +106,7 @@ def train_model(config):
                 shuffle=True)
 
     val_label = []
-    for _, path in valloader:
+    for _,_,path in valloader:
         val_label.append(path[0])
     np.savetxt( SAVING_PATH / "val_label.csv", np.array(val_label), delimiter =", ", fmt ='% s')
 

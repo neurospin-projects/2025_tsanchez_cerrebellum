@@ -84,10 +84,10 @@ class VAE(nn.Module):
         self.encoder = nn.Sequential(OrderedDict(modules_encoder))
 
         # Flatten of the input : nb_filter = 16 * 2**depth
-
-        self.z_mean = nn.Linear(64 * self.z_dim_h * self.z_dim_w* self.z_dim_d, n_latent)
-        self.z_var = nn.Linear(64 * self.z_dim_h * self.z_dim_w* self.z_dim_d, n_latent)
-        self.z_develop = nn.Linear(n_latent, 64 *self.z_dim_h * self.z_dim_w* self.z_dim_d)
+        nb_filters = 16 * 2**(depth -1)
+        self.z_mean = nn.Linear(nb_filters * self.z_dim_h * self.z_dim_w* self.z_dim_d, n_latent)
+        self.z_var = nn.Linear(nb_filters * self.z_dim_h * self.z_dim_w* self.z_dim_d, n_latent)
+        self.z_develop = nn.Linear(n_latent, nb_filters  *self.z_dim_h * self.z_dim_w* self.z_dim_d)
 
         modules_decoder = []
         for step in range(depth-1):
@@ -104,7 +104,7 @@ class VAE(nn.Module):
             modules_decoder.append(('ReLU%sa' %step, nn.ReLU()))
         modules_decoder.append(('convtrans3dn', nn.ConvTranspose3d(16, 1, kernel_size=2,
                         stride=2, padding=0)))
-        modules_decoder.append(('conv_final', nn.Conv3d(1, 3, kernel_size=1, stride=1)))
+        modules_decoder.append(('conv_final', nn.Conv3d(1, 1, kernel_size=1, stride=1)))
         self.decoder = nn.Sequential(OrderedDict(modules_decoder))
         self.weight_initialization()
 

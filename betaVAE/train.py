@@ -97,7 +97,8 @@ def train_vae(config, trainloader, valloader):
     weights = config.weights
     class_weights = torch.FloatTensor(weights).to(device)
 
-    criterion = nn.CrossEntropyLoss(weight=class_weights, reduction='mean')
+    # criterion = nn.CrossEntropyLoss(weight=class_weights, reduction='mean')
+    criterion = nn.BCEWithLogitsLoss(reduction="mean")
     optimizer = torch.optim.Adam(vae.parameters(), lr=lr)
 
     nb_epoch = config.nb_epoch
@@ -113,15 +114,16 @@ def train_vae(config, trainloader, valloader):
         recon_loss = 0.0
         kl_loss = 0.0
         epoch_steps = 0
-        for inputs, path in trainloader:
+        for both_split, full, path in trainloader:
             optimizer.zero_grad()
 
+            inputs = both_split[:,0,:,:,:].unsqueeze(1)
             inputs = Variable(inputs).to(device, dtype=torch.float32)
 
             # ! Cross entropy doesn't take negative values so added 1 to each class
-            target = torch.squeeze(inputs, dim=1).long() + 1
+            # target = torch.squeeze(inputs, dim=1).long() + 1
             output, z, logvar = vae(inputs)
-            partial_recon_loss, partial_kl, loss = vae_loss(output, target, z,
+            partial_recon_loss, partial_kl, loss = vae_loss(output, inputs, z,
                                     logvar, criterion,
                                     kl_weight=config.kl)
             output = torch.argmax(output, dim=1)
@@ -178,13 +180,14 @@ def train_vae(config, trainloader, valloader):
         val_steps = 0
         vae.eval()
 
-        for inputs, path in valloader:
+        for both_split, full, path in valloader:
             with torch.no_grad():
+                inputs = both_split[:,0,:,:,:].unsqueeze(1)
                 inputs = Variable(inputs).to(device, dtype=torch.float32)
                 output, z, logvar = vae(inputs)
             # ! Cross entropy doesn't take negative values so added 1 to each class
                 target = torch.squeeze(inputs, dim=1).long() + 1
-                partial_recon_loss_val, partial_kl_val, loss = vae_loss(output, target,
+                partial_recon_loss_val, partial_kl_val, loss = vae_loss(output, inputs,
                                         z, logvar, criterion,
                                         kl_weight=config.kl)
                 output = torch.argmax(output, dim=1)
