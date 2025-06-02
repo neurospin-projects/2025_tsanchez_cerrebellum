@@ -126,7 +126,8 @@ def train_vae(config, trainloader, valloader):
             output, z, logvar = vae(inputs)
             partial_recon_loss, fft_loss,  partial_kl, loss = vae_loss(output, inputs, z,
                                     logvar, criterion,
-                                    kl_weight=config.kl)
+                                    kl_weight=config.kl,
+                                    gamma= config.gamma)
             # output = torch.argmax(output, dim=1)
             out_proba = torch.nn.functional.sigmoid(output)
             output = (out_proba > 0.5).int()
@@ -195,7 +196,8 @@ def train_vae(config, trainloader, valloader):
             # ! Cross entropy doesn't take negative values so added 1 to each class
                 partial_recon_loss_val, fft_loss, partial_kl_val, loss = vae_loss(output, inputs,
                                         z, logvar, criterion,
-                                        kl_weight=config.kl)
+                                        kl_weight=config.kl,
+                                        gamma = config.gamma)
                 out_proba = torch.nn.functional.sigmoid(output)
                 output = (out_proba > 0.5).int()
 

@@ -150,11 +150,11 @@ class VAE(nn.Module):
         return out, mean, logvar
 
 
-def vae_loss(output, inputs, mean, logvar, loss_func, kl_weight):
+def vae_loss(output, inputs, mean, logvar, loss_func, kl_weight, gamma):
     kl_loss = -0.5 * torch.sum(-torch.exp(logvar) - mean**2 + 1. + logvar)
     fft_loss = fourier_loss(output, inputs)
     recon_loss = loss_func(output, inputs) 
-    return recon_loss, fft_loss, kl_loss, (1000*recon_loss + fft_loss) + (kl_weight * kl_loss)
+    return recon_loss, fft_loss, kl_loss, ((1-gamma)*1000*recon_loss + gamma*fft_loss) + (kl_weight * kl_loss)
 
 def fourier_loss(output, inputs):
     input_fft = torch.fft.fftn(inputs, dim=(2,3,4))
