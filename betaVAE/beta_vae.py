@@ -92,6 +92,7 @@ class VAE(nn.Module):
                     drop_rate=config.drop_rate,
                     in_shape=config.in_shape)
 
+<<<<<<< HEAD
                 self.out_dim = self.encoder.out_dim 
                 self.final_nb_filters = config.filters[-1]
                 self.flatten_size = self.out_dim * self.final_nb_filters
@@ -113,6 +114,13 @@ class VAE(nn.Module):
                     linear_in_backbone=config.linear_in_backbone)
                 
         
+=======
+        # Flatten of the input : nb_filter = 16 * 2**depth
+        nb_filters = 16 * 2**(depth -1)
+        self.z_mean = nn.Linear(nb_filters * self.z_dim_h * self.z_dim_w* self.z_dim_d, n_latent)
+        self.z_var = nn.Linear(nb_filters * self.z_dim_h * self.z_dim_w* self.z_dim_d, n_latent)
+        self.z_develop = nn.Linear(n_latent, nb_filters  *self.z_dim_h * self.z_dim_w* self.z_dim_d)
+>>>>>>> fft_loss
 
         # * Mean and var computation
         self.z_mean = nn.Linear(self.flatten_size, self.n_latent)
@@ -135,7 +143,11 @@ class VAE(nn.Module):
             modules_decoder.append(('ReLU%sa' %step, nn.ReLU()))
         modules_decoder.append(('convtrans3dn', nn.ConvTranspose3d(16, 1, kernel_size=2,
                         stride=2, padding=0)))
+<<<<<<< HEAD
         modules_decoder.append(('conv_final', nn.Conv3d(1, 2, kernel_size=1, stride=1)))
+=======
+        modules_decoder.append(('conv_final', nn.Conv3d(1, 1, kernel_size=1, stride=1)))
+>>>>>>> fft_loss
         self.decoder = nn.Sequential(OrderedDict(modules_decoder))
         
         # ! Check weight initialisation for the different layers
@@ -183,10 +195,25 @@ class VAE(nn.Module):
         return out, mean, logvar
 
 
-def vae_loss(output, inputs, mean, logvar, loss_func, kl_weight):
+def vae_loss(output, inputs, mean, logvar, loss_func, kl_weight, gamma):
     kl_loss = -0.5 * torch.sum(-torch.exp(logvar) - mean**2 + 1. + logvar)
+<<<<<<< HEAD
     recon_loss = loss_func(output, inputs)
     return recon_loss, kl_loss, recon_loss + (kl_weight * kl_loss)
+=======
+    fft_loss = fourier_loss(output, inputs)
+    recon_loss = loss_func(output, inputs) 
+    return recon_loss, fft_loss, kl_loss, ((1-gamma)*1000*recon_loss + gamma*fft_loss) + (kl_weight * kl_loss)
+
+def fourier_loss(output, inputs):
+    input_fft = torch.fft.fftn(inputs, dim=(2,3,4))
+    output_fft = torch.fft.fftn(output, dim=(2,3,4))
+
+    mag_input = torch.abs(input_fft)
+    mag_output = torch.abs(output_fft)
+
+    return torch.nn.functional.mse_loss(mag_input, mag_output)
+>>>>>>> fft_loss
 
 
 class ModelTester():
