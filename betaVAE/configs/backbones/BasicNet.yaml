@@ -1,2 +1,3 @@
 # @package _global_
-depth: 3
+backbone_name: basicnet
+encoder_depth: 3

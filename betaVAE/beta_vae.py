@@ -38,13 +38,17 @@ import numpy as np
 import torch
 from torch.autograd import Variable
 import torch.nn as nn
+from omegaconf import DictConfig
+from backbones.basicnet import BasicNet
+from backbones.convnet import ConvNet
+from backbones.resnet import ResNet, BasicBlock
 
 
 
 class VAE(nn.Module):
     """ beta-VAE class
     """
-    def __init__(self, in_shape, n_latent, depth, device = None):
+    def __init__(self, config : DictConfig, device = None):
         """
         Args:
             in_shape: tuple, input shape
@@ -57,41 +61,68 @@ class VAE(nn.Module):
             self.device = device
         else : 
             if torch.cuda.is_available() : 
-                self.device = "cuda:0" #Using default GPU
+                self.device = "cuda" #Using default GPU
             else : 
                 self.device = "cpu"
+
+        self.n_latent = config.n
         
-        self.in_shape = in_shape
-        self.n_latent = n_latent
-        c,h,w,d = in_shape
-        self.depth = depth
-        self.z_dim_h = h//2**depth # receptive field downsampled 2 times for each step
-        self.z_dim_w = w//2**depth
-        self.z_dim_d = d//2**depth
+        match config.backbone_name:
+            case "basicnet" :
+                self.encoder = BasicNet(
+                    in_shape=config.in_shape,
+                    depth = config.encoder_depth,
+                )
 
-        modules_encoder = []
-        for step in range(depth):
-            in_channels = 1 if step == 0 else out_channels
-            out_channels = 16 if step == 0  else 16 * (2**step)
-            modules_encoder.append(('conv%s' %step, nn.Conv3d(in_channels, out_channels,
-                    kernel_size=3, stride=1, padding=1)))
-            modules_encoder.append(('norm%s' %step, nn.BatchNorm3d(out_channels)))
-            modules_encoder.append(('LeakyReLU%s' %step, nn.LeakyReLU()))
-            modules_encoder.append(('conv%sa' %step, nn.Conv3d(out_channels, out_channels,
-                    kernel_size=4, stride=2, padding=1)))
-            modules_encoder.append(('norm%sa' %step, nn.BatchNorm3d(out_channels)))
-            modules_encoder.append(('LeakyReLU%sa' %step, nn.LeakyReLU()))
-        self.encoder = nn.Sequential(OrderedDict(modules_encoder))
+                self.out_dim = self.encoder.z_dim_h * self.encoder.z_dim_w * self.encoder.z_dim_d
+                self.final_nb_filters = 16 * (2 ** (config.encoder_depth -1))
+                self.flatten_size = self.final_nb_filters * self.out_dim
+                
+            case "convnet" : 
+                self.encoder = ConvNet(
+                    encoder_depth=config.encoder_depth,
+                    filters=config.filters,
+                    block_depth=config.block_depth,
+                    initial_kernel_size=config.initial_kernel_size,
+                    initial_stride=config.initial_stride,
+                    max_pool=config.max_pool,
+                    num_representation_features=config.backbone_output_size,
+                    linear = config.linear_in_backbone,
+                    adaptive_pooling=config.adaptive_pooling,
+                    drop_rate=config.drop_rate,
+                    in_shape=config.in_shape)
 
-        # Flatten of the input : nb_filter = 16 * 2**depth
+                self.out_dim = self.encoder.out_dim 
+                self.final_nb_filters = config.filters[-1]
+                self.flatten_size = self.out_dim * self.final_nb_filters
 
-        self.z_mean = nn.Linear(64 * self.z_dim_h * self.z_dim_w* self.z_dim_d, n_latent)
-        self.z_var = nn.Linear(64 * self.z_dim_h * self.z_dim_w* self.z_dim_d, n_latent)
-        self.z_develop = nn.Linear(n_latent, 64 *self.z_dim_h * self.z_dim_w* self.z_dim_d)
+            case "resnet" :
+                self.encoder = ResNet(
+                    block=BasicBlock,
+                    layers=config.layers,
+                    channels=config.channels,
+                    in_channels=1,
+                    num_classes=config.backbone_output_size,
+                    zero_init_residual=config.zero_init_residual,
+                    dropout_rate=config.drop_rate,
+                    out_block=None,
+                    prediction_bias=False,
+                    initial_kernel_size=config.initial_kernel_size,
+                    initial_stride=config.initial_stride,
+                    adaptive_pooling=config.adaptive_pooling,
+                    linear_in_backbone=config.linear_in_backbone)
+                
+        
 
+        # * Mean and var computation
+        self.z_mean = nn.Linear(self.flatten_size, self.n_latent)
+        self.z_var = nn.Linear(self.flatten_size, self.n_latent)
+        self.z_develop = nn.Linear(self.n_latent, self.flatten_size)
+        
+        #* Same decoder for the different architectures
         modules_decoder = []
-        for step in range(depth-1):
-            in_channels = out_channels
+        for step in range(config.encoder_depth-1):
+            in_channels = out_channels if step != 0 else self.final_nb_filters
             out_channels = in_channels // 2
             ini = 1 if step==0 else 0
             modules_decoder.append(('convTrans3d%s' %step, nn.ConvTranspose3d(in_channels,
@@ -104,9 +135,11 @@ class VAE(nn.Module):
             modules_decoder.append(('ReLU%sa' %step, nn.ReLU()))
         modules_decoder.append(('convtrans3dn', nn.ConvTranspose3d(16, 1, kernel_size=2,
                         stride=2, padding=0)))
-        modules_decoder.append(('conv_final', nn.Conv3d(1, 3, kernel_size=1, stride=1)))
+        modules_decoder.append(('conv_final', nn.Conv3d(1, 2, kernel_size=1, stride=1)))
         self.decoder = nn.Sequential(OrderedDict(modules_decoder))
-        self.weight_initialization()
+        
+        # ! Check weight initialisation for the different layers
+        # self.weight_initialization()
 
     def weight_initialization(self):
         """
@@ -139,7 +172,7 @@ class VAE(nn.Module):
 
     def decode(self, z):
         out = self.z_develop(z)
-        out = out.view(z.size(0), 16 * 2**(self.depth-1), self.z_dim_h, self.z_dim_w, self.z_dim_d)
+        out = out.view(z.size(0), self.final_nb_filters, self.encoder.z_dim_h, self.encoder.z_dim_w, self.encoder.z_dim_d)
         out = self.decoder(out)
         return out
 
@@ -153,7 +186,7 @@ class VAE(nn.Module):
 def vae_loss(output, inputs, mean, logvar, loss_func, kl_weight):
     kl_loss = -0.5 * torch.sum(-torch.exp(logvar) - mean**2 + 1. + logvar)
     recon_loss = loss_func(output, inputs)
-    return recon_loss, kl_loss, 1000*recon_loss + 1000*(kl_weight * kl_loss)
+    return recon_loss, kl_loss, recon_loss + (kl_weight * kl_loss)
 
 
 class ModelTester():

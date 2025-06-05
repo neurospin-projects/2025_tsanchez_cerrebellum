@@ -13,4 +13,6 @@ adaptive_pooling: !!null
 #adaptive_pooling: ['max', [3,3,3]]
 #adaptive_pooling: ['average', [3,3,3]]
 #adaptive_pooling: ['max', 1]
+drop_rate: 0.05
+linear_in_backbone: False
 projection_head_hidden_layers:

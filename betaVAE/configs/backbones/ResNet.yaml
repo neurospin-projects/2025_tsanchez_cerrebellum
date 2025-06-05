@@ -11,4 +11,5 @@ initial_stride: 1
 #adaptive_pooling: ['average', [3,3,3]]
 #adaptive_pooling: ['average', 1]
 adaptive_pooling: !!null
+linear_in_backbone: False
 projection_head_hidden_layers:

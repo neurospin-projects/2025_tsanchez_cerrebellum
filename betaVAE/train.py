@@ -38,6 +38,7 @@
 import numpy as np
 import os
 from torch.utils.tensorboard import SummaryWriter
+from torchsummary import summary
 import torch.nn as nn
 import torch
 from pathlib import Path
@@ -87,17 +88,20 @@ def train_vae(config, trainloader, valloader):
 
     device = "cpu"
     if torch.cuda.is_available():
-        device = "cuda:0"
+        device = "cuda"
 
-    vae = VAE(config.in_shape, config.n, depth=3)
+    vae = VAE(config)
     vae.to(device)
+    
+    summary(vae, tuple(config.in_shape))
 
-    # summary(vae, list(config.in_shape))
 
     weights = config.weights
     class_weights = torch.FloatTensor(weights).to(device)
 
-    criterion = nn.CrossEntropyLoss(weight=class_weights, reduction='mean')
+    criterion = nn.CrossEntropyLoss(weight=class_weights, reduction='sum')
+    # criterion = nn.CrossEntropyLoss(reduction='mean')
+
     optimizer = torch.optim.Adam(vae.parameters(), lr=lr)
 
     nb_epoch = config.nb_epoch
@@ -113,13 +117,14 @@ def train_vae(config, trainloader, valloader):
         recon_loss = 0.0
         kl_loss = 0.0
         epoch_steps = 0
-        for inputs, path in trainloader:
+        for both_split, full, path in trainloader:
             optimizer.zero_grad()
 
+            inputs = both_split[:,0,:,:,:].unsqueeze(1)
             inputs = Variable(inputs).to(device, dtype=torch.float32)
 
             # ! Cross entropy doesn't take negative values so added 1 to each class
-            target = torch.squeeze(inputs, dim=1).long() + 1
+            target = torch.squeeze(inputs, dim=1).long()
             output, z, logvar = vae(inputs)
             partial_recon_loss, partial_kl, loss = vae_loss(output, target, z,
                                     logvar, criterion,
@@ -178,12 +183,13 @@ def train_vae(config, trainloader, valloader):
         val_steps = 0
         vae.eval()
 
-        for inputs, path in valloader:
+        for both_split, full, path in valloader:
             with torch.no_grad():
+                inputs = both_split[:,0,:,:,:].unsqueeze(1)
                 inputs = Variable(inputs).to(device, dtype=torch.float32)
                 output, z, logvar = vae(inputs)
             # ! Cross entropy doesn't take negative values so added 1 to each class
-                target = torch.squeeze(inputs, dim=1).long() + 1
+                target = torch.squeeze(inputs, dim=1).long()
                 partial_recon_loss_val, partial_kl_val, loss = vae_loss(output, target,
                                         z, logvar, criterion,
                                         kl_weight=config.kl)
@@ -231,7 +237,7 @@ def train_vae(config, trainloader, valloader):
         early_stopping(valid_loss, vae)
 
         """ Saving of reconstructions for visualization in Anatomist software """
-        if (epoch%5) == 0:
+        if (epoch%10) == 0:
             id_arr.append(path[0])
             phase_arr.append('val')
             input_arr.append(np.array(np.squeeze(inputs[0]).cpu().detach().numpy()))

@@ -1,0 +1,8 @@
+# @package _global_
+hydra:  
+  output_subdir: null  
+  run:  
+    dir: .
+
+checkpoint_dir: null
+

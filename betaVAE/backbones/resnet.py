@@ -154,14 +154,15 @@ class ResNet(nn.Module):
         self.groups = groups
         self.base_width = width_per_group
         #initial_stride = 2 if initial_kernel_size==7 else 1
-        padding = (initial_kernel_size-initial_stride+1)//2
+        padding = (initial_kernel_size-initial_stride+1)//2 # ! k =7, s=1 --> padding = 3
         self.conv1 = nn.Conv3d(in_channels, self.inplanes, kernel_size=initial_kernel_size, stride=initial_stride,
-                               padding=padding, bias=False)
+                               padding=padding, bias=False) # * -> No compression in default
         self.bn1 = norm_layer(self.inplanes)
         self.relu = nn.ReLU(inplace=True)
         #self.maxpool = nn.MaxPool3d(kernel_size=3, stride=2, padding=1)
 
-        #channels = [64, 128, 256, 512]
+        # * channels = [64, 128, 256, 512]
+        # * layers = [2,2,2,2]
 
         self.layer1 = self._make_layer(block, channels[0], layers[0], stride=1)
         self.layer2 = self._make_layer(block, channels[1], layers[1], stride=2,
@@ -170,12 +171,14 @@ class ResNet(nn.Module):
                                        dilate=replace_stride_with_dilation[1])
         self.layer4 = self._make_layer(block, channels[3], layers[3], stride=2,
                                        dilate=replace_stride_with_dilation[2])
-        if self.adaptive_pooling[0]=='max':
-            self.pool = nn.AdaptiveMaxPool3d(self.adaptive_pooling[1])
-        elif self.adaptive_pooling[0]=='average':
-            self.pool = nn.AdaptiveAvgPool3d(self.adaptive_pooling[1])
-        else:
-            raise ValueError("Wrong pooling name argument")
+
+        # if self.adaptive_pooling[0]=='max':
+        #     self.pool = nn.AdaptiveMaxPool3d(self.adaptive_pooling[1])
+        # elif self.adaptive_pooling[0]=='average':
+        #     self.pool = nn.AdaptiveAvgPool3d(self.adaptive_pooling[1])
+        # else:
+        #     raise ValueError("Wrong pooling name argument")
+
         if dropout_rate is not None and dropout_rate>0:
             self.dropout = nn.Dropout(dropout_rate)
 
@@ -234,7 +237,7 @@ class ResNet(nn.Module):
         layers = []
         layers.append(block(self.inplanes, planes, stride=stride, downsample=downsample, groups=self.groups,
                             base_width=self.base_width, dilation=previous_dilation, norm_layer=norm_layer))
-        self.inplanes = planes * block.expansion
+        self.inplanes = planes * block.expansion # BasicBlock.expansion = 1 ; Bottleneck.expansion = 4
         for _ in range(1, blocks):
             layers.append(block(self.inplanes, planes, groups=self.groups,
                                 base_width=self.base_width, dilation=self.dilation,
@@ -246,16 +249,16 @@ class ResNet(nn.Module):
         self.inputs = x.detach().cpu().numpy()
         x = self.conv1(x)
         x = self.bn1(x)
-        x = self.relu(x)
+        x = self.relu(x) # * Same dim
         #x = self.maxpool(x)
 
-        x1 = self.layer1(x)
-        x2 = self.layer2(x1)
-        x3 = self.layer3(x2)
-        x4 = self.layer4(x3)
+        x1 = self.layer1(x) # * Same dim
+        x2 = self.layer2(x1) #* n_in/2
+        x3 = self.layer3(x2) #* n_in/2
+        x4 = self.layer4(x3) #* n_in/2 
 
-        x5 = self.pool(x4)
-        x6 = torch.flatten(x5, 1)
+        # x5 = self.pool(x4) # ! Does it make sense to pool in the case of vae ? 
+        x6 = torch.flatten(x4, 1)
         if hasattr(self, 'dropout'):
             x6  = self.dropout(x6)
         #elif self.out_block == "contrastive":

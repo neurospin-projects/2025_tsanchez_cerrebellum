@@ -2,9 +2,18 @@
 
 import torch.nn as nn
 from collections import OrderedDict
+from typing import List
 
 class BasicNet(nn.Module):
-    def __init__(self, depth = 3):
+    def __init__(self, in_shape : List[int], depth = 3):
+
+        super().__init__()
+        self.in_shape = in_shape
+        c,h,w,d = in_shape
+        self.depth = depth
+        self.z_dim_h = h//2**depth # receptive field downsampled 2 times for each step
+        self.z_dim_w = w//2**depth
+        self.z_dim_d = d//2**depth
 
         modules_encoder = []
         for step in range(depth):

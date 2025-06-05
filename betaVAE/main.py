@@ -61,9 +61,9 @@ def adjust_in_shape(config):
     dims=[]
     for idx in range(1, 4):
         dim = config.in_shape[idx]
-        r = dim%(2**config.depth)
+        r = dim%(2**config.encoder_depth)
         if r!=0:
-            dim+=(2**config.depth-r)
+            dim+=(2**config.encoder_depth-r)
         dims.append(dim)
     return((1, dims[0]+4, dims[1], dims[2])) # ! removed dim[0]+4 because it was strange
 
@@ -106,7 +106,7 @@ def train_model(config):
                 shuffle=True)
 
     val_label = []
-    for _, path in valloader:
+    for _,_, path in valloader:
         val_label.append(path[0])
     np.savetxt( SAVING_PATH / "val_label.csv", np.array(val_label), delimiter =", ", fmt ='% s')
 

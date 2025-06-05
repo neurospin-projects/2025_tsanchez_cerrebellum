@@ -4,4 +4,6 @@ defaults:
  - model: BetaVAE
  - trainer: trainer
  - loss: CrossEntropy
+ - backbones: ConvNet
  - hydra : local_jz
+

@@ -114,9 +114,13 @@ class UkbDataset(Dataset) :
         clean_np = padder(np_3d)
 
         volume_tensor = torch.from_numpy(clean_np)
-        volume_tensor.unsqueeze_(0)
 
-        return volume_tensor, subject
+        # * Splitting in 2 channels 
+        white_mat_tens = torch.where(volume_tensor == -1, 1, 0)
+        sulci_tens = torch.where(volume_tensor == 1, 1, 0)
+        split_channel_vol = torch.stack([white_mat_tens, sulci_tens])
+
+        return split_channel_vol, volume_tensor.unsqueeze(0), subject
 
         
         
