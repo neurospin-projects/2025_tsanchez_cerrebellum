@@ -27,7 +27,7 @@ DICT_VIEWS = {
 }
 
 #ROOT_EXPERIMENT = Path("/neurospin/dico/tsanchez/Test_BetaVAE/2025-05-16/15-45-05")
-ROOT_EXPERIMENT = Path("/neurospin/dico/tsanchez/Test_BetaVAE/2025-05-27/17-31-16_")
+ROOT_EXPERIMENT = Path("/neurospin/dico/tsanchez/Test_BetaVAE/2025-06-05")
 ROOT_DATA = Path("/neurospin/dico/tsanchez/preprocessed/UKBio1000")
 
 DEPTH = 3
@@ -42,9 +42,7 @@ vae_settings = {
     "depth" : DEPTH}
 
 to_plot = [
-"kl=2_n=1024_weights=[2, 1, 2]",
-"kl=4_n=1024_weights=[2, 1, 2]",
-"kl=8_n=1024_weights=[2, 1, 2]",
+"09-46-11_",
 ]
 
 
@@ -55,5 +53,5 @@ if __name__ == "__main__" :
             root_dataset= ROOT_DATA,
             vae_settings= vae_settings
         )
-        visu_exp.plt_plot(start = 20 ,stop = 59) 
-        #visu_exp.plot_training(save_full=False)
+        #visu_exp.plt_plot(start = 20 ,stop = 59) 
+        visu_exp.plot_training(save_full=True)

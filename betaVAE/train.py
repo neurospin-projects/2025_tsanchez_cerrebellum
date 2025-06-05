@@ -90,11 +90,7 @@ def train_vae(config, trainloader, valloader):
     if torch.cuda.is_available():
         device = "cuda"
 
-<<<<<<< HEAD
     vae = VAE(config)
-=======
-    vae = VAE(config.in_shape, config.n, depth=config.depth, device=device)
->>>>>>> fft_loss
     vae.to(device)
     
     summary(vae, tuple(config.in_shape))
@@ -103,14 +99,9 @@ def train_vae(config, trainloader, valloader):
     weights = config.weights
     class_weights = torch.FloatTensor(weights).to(device)
 
-<<<<<<< HEAD
     criterion = nn.CrossEntropyLoss(weight=class_weights, reduction='sum')
     # criterion = nn.CrossEntropyLoss(reduction='mean')
 
-=======
-    # criterion = nn.CrossEntropyLoss(weight=class_weights, reduction='mean')
-    criterion = nn.BCEWithLogitsLoss(reduction="mean")
->>>>>>> fft_loss
     optimizer = torch.optim.Adam(vae.parameters(), lr=lr)
 
     nb_epoch = config.nb_epoch
@@ -134,11 +125,7 @@ def train_vae(config, trainloader, valloader):
             inputs = Variable(inputs).to(device, dtype=torch.float32)
 
             # ! Cross entropy doesn't take negative values so added 1 to each class
-<<<<<<< HEAD
             target = torch.squeeze(inputs, dim=1).long()
-=======
-            # target = torch.squeeze(inputs, dim=1).long() + 1
->>>>>>> fft_loss
             output, z, logvar = vae(inputs)
             partial_recon_loss, fft_loss,  partial_kl, loss = vae_loss(output, inputs, z,
                                     logvar, criterion,
@@ -210,12 +197,8 @@ def train_vae(config, trainloader, valloader):
                 inputs = Variable(inputs).to(device, dtype=torch.float32)
                 output, z, logvar = vae(inputs)
             # ! Cross entropy doesn't take negative values so added 1 to each class
-<<<<<<< HEAD
                 target = torch.squeeze(inputs, dim=1).long()
                 partial_recon_loss_val, partial_kl_val, loss = vae_loss(output, target,
-=======
-                partial_recon_loss_val, fft_loss, partial_kl_val, loss = vae_loss(output, inputs,
->>>>>>> fft_loss
                                         z, logvar, criterion,
                                         kl_weight=config.kl,
                                         gamma = config.gamma)

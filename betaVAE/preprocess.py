@@ -121,14 +121,6 @@ class UkbDataset(Dataset) :
         split_channel_vol = torch.stack([white_mat_tens, sulci_tens])
 
         return split_channel_vol, volume_tensor.unsqueeze(0), subject
-<<<<<<< HEAD
-=======
-
->>>>>>> fft_loss
-
-        
-        
-
 
 class SkeletonDataset():
     """Custom dataset for skeleton images that includes image file paths.

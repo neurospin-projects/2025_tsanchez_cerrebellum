@@ -1,7 +1,2 @@
 # @package _global_
-<<<<<<< HEAD
 weights: [1, 2]
-=======
-weights: [2, 1, 2]
-gamma: 0.1
->>>>>>> fft_loss
