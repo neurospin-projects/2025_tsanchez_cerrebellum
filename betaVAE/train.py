@@ -93,7 +93,7 @@ def train_vae(config, trainloader, valloader):
     vae = VAE(config)
     vae.to(device)
     
-    summary(vae, tuple(config.in_shape))
+    #summary(vae, tuple(config.in_shape))
 
 
     weights = config.weights
@@ -127,25 +127,20 @@ def train_vae(config, trainloader, valloader):
             # ! Cross entropy doesn't take negative values so added 1 to each class
             target = torch.squeeze(inputs, dim=1).long()
             output, z, logvar = vae(inputs)
-            partial_recon_loss, fft_loss,  partial_kl, loss = vae_loss(output, inputs, z,
+            partial_recon_loss, partial_kl, loss = vae_loss(output, target, z,
                                     logvar, criterion,
-                                    kl_weight=config.kl,
-                                    gamma= config.gamma)
-            # output = torch.argmax(output, dim=1)
-            out_proba = torch.nn.functional.sigmoid(output)
-            output = (out_proba > 0.5).int()
+                                    kl_weight=config.kl,)
+            output = torch.argmax(output, dim=1)
             loss.backward()
             optimizer.step()
 
             running_loss += loss.item()
             recon_loss += partial_recon_loss
             kl_loss += partial_kl
-            f_loss += fft_loss
             epoch_steps += 1
         running_loss = running_loss / epoch_steps
         recon_loss = recon_loss / epoch_steps
         kl_loss = kl_loss / epoch_steps
-        f_loss = f_loss / epoch_steps
 
 
         # Retrieving counts of the output
@@ -162,7 +157,6 @@ def train_vae(config, trainloader, valloader):
 
         # Writing loss
         writer.add_scalar('Loss/train', running_loss, epoch)
-        writer.add_scalar('fft_loss/train', fft_loss, epoch)
         writer.add_scalar('KL Loss/train', kl_loss, epoch)
         writer.add_scalar('recon Loss/train', recon_loss, epoch)
         writer.close()
@@ -200,20 +194,16 @@ def train_vae(config, trainloader, valloader):
                 target = torch.squeeze(inputs, dim=1).long()
                 partial_recon_loss_val, partial_kl_val, loss = vae_loss(output, target,
                                         z, logvar, criterion,
-                                        kl_weight=config.kl,
-                                        gamma = config.gamma)
-                out_proba = torch.nn.functional.sigmoid(output)
-                output = (out_proba > 0.5).int()
+                                        kl_weight=config.kl,)
 
+                output = torch.argmax(output, dim=1)
                 val_loss += loss.cpu().numpy()
                 recon_loss_val += partial_recon_loss_val
                 kl_val += partial_kl_val
-                f_loss += fft_loss
                 val_steps += 1
         valid_loss = val_loss / val_steps
         recon_loss_val = recon_loss_val / val_steps
         kl_val = kl_val / val_steps
-        f_loss = f_loss / epoch_steps
 
 
         counts_output = retrieve_counts(output.unique(return_counts=True))
@@ -228,7 +218,6 @@ def train_vae(config, trainloader, valloader):
         writer.add_scalar('Counts_sulci/val', counts_output[2], epoch)
 
         writer.add_scalar('Loss/val', valid_loss, epoch)
-        writer.add_scalar('fft_loss/val', fft_loss, epoch)
         writer.add_scalar('KL Loss/val', kl_val, epoch)
         writer.add_scalar('recon Loss/val', recon_loss_val, epoch)
 

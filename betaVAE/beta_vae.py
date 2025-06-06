@@ -39,9 +39,9 @@ import torch
 from torch.autograd import Variable
 import torch.nn as nn
 from omegaconf import DictConfig
-from betaVAE.backbones.basicnet import BasicNet
-from betaVAE.backbones.convnet import ConvNet
-from betaVAE.backbones.resnet import ResNet, BasicBlock
+from backbones.basicnet import BasicNet
+from backbones.convnet import ConvNet
+from backbones.resnet import ResNet, BasicBlock
 
 
 
@@ -182,7 +182,7 @@ class VAE(nn.Module):
         return out, mean, logvar
 
 
-def vae_loss(output, inputs, mean, logvar, loss_func, kl_weight, gamma):
+def vae_loss(output, inputs, mean, logvar, loss_func, kl_weight):
     kl_loss = -0.5 * torch.sum(-torch.exp(logvar) - mean**2 + 1. + logvar)
     recon_loss = loss_func(output, inputs)
     return recon_loss, kl_loss, recon_loss + (kl_weight * kl_loss)
