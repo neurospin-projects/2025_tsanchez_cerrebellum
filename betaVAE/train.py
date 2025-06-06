@@ -138,6 +138,16 @@ def train_vae(config, trainloader, valloader):
             recon_loss += partial_recon_loss
             kl_loss += partial_kl
             epoch_steps += 1
+
+
+            if (epoch % 1 == 0) : 
+                for name, param in vae.named_parameters():
+                    if param is not None:
+                        writer.add_histogram(f"grad/{name}", param.grad, global_step=epoch)
+                        # print(f" [GRAD] {name} : {param.grad}")
+                        
+
+
         running_loss = running_loss / epoch_steps
         recon_loss = recon_loss / epoch_steps
         kl_loss = kl_loss / epoch_steps
