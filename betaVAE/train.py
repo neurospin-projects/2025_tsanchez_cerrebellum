@@ -38,7 +38,6 @@
 import numpy as np
 import os
 from torch.utils.tensorboard import SummaryWriter
-from torchsummary import summary
 import torch.nn as nn
 import torch
 from pathlib import Path
@@ -93,9 +92,6 @@ def train_vae(config, trainloader, valloader):
     vae = VAE(config)
     vae.to(device)
     
-    #summary(vae, tuple(config.in_shape))
-
-
     weights = config.weights
     class_weights = torch.FloatTensor(weights).to(device)
 
