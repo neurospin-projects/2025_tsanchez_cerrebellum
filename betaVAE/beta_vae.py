@@ -1,4 +1,5 @@
 # -*- coding: utf-8 -*-
+
 # /usr/bin/env python3
 #
 #  This software and supporting documentation are distributed by
@@ -138,7 +139,7 @@ class VAE(nn.Module):
         self.decoder = nn.Sequential(OrderedDict(modules_decoder))
         
         # ! Check weight initialisation for the different layers
-        # self.weight_initialization()
+        self.weight_initialization()
 
     def weight_initialization(self):
         """
@@ -146,7 +147,7 @@ class VAE(nn.Module):
         """
         for module in self.modules():
             if isinstance(module, nn.ConvTranspose3d) or isinstance(module, nn.Conv3d):
-                nn.init.xavier_normal_(module.weight)
+                nn.init.kaiming_normal_(module.weight, nonlinearity="relu")
                 nn.init.constant_(module.bias, 0)
             elif isinstance(module, nn.BatchNorm2d):
                 nn.init.constant_(module.weight, 1)
