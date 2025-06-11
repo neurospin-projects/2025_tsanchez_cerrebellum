@@ -16,7 +16,7 @@ cat <<EOF
 #SBATCH --cpus-per-task=10
 #SBATCH --time=20:00:00
 #SBATCH --hint=nomultithread
-#SBATCH -qos=qos_gpu-t3
+#SBATCH --qos=qos_gpu-t3
 
 #SBATCH -A tgu@v100
 
@@ -28,5 +28,5 @@ module purge
 module load pytorch-gpu/py3/2.4.0
 set -x
 
-srun python main.py kl=$kl n=$n lr=$lr nb_epoch=$nb_epoch batch_size=$batch_size weights=$weights suffix_dir=$RANDOM
+srun python main.py kl=$kl n=$n lr=$lr nb_epoch=$nb_epoch batch_size=$batch_size weights=$weights gradient_max_norm=$gradient_max_norm weight_decay=$weight_decay suffix_dir=$RANDOM
 EOF

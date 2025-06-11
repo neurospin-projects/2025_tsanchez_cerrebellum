@@ -20,7 +20,10 @@ do
 			n=$n
 			nb_epoch=250
 			batch_size=32
-			weights=[3,1,3]
+			weights=[1,2]
+			gradient_max_norm=100
+			weight_decay=0.0001
+
 EOF
 count=$((count + 1))
 		done
