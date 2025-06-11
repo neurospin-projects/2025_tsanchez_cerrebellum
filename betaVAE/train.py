@@ -98,7 +98,7 @@ def train_vae(config, trainloader, valloader):
     criterion = nn.CrossEntropyLoss(weight=class_weights, reduction='sum')
     # criterion = nn.CrossEntropyLoss(reduction='mean')
 
-    optimizer = torch.optim.Adam(vae.parameters(), lr=lr)
+    optimizer = torch.optim.Adam(vae.parameters(), lr=lr, weight_decay=config.weight_decay)
 
     nb_epoch = config.nb_epoch
     early_stopping = EarlyStopping(patience=35, verbose=True, root_dir=SAVING_PATH)
@@ -112,7 +112,6 @@ def train_vae(config, trainloader, valloader):
         running_loss = 0.0
         recon_loss = 0.0
         kl_loss = 0.0
-        f_loss = 0
         epoch_steps = 0
         for both_split, full, path in trainloader:
             optimizer.zero_grad()
@@ -122,12 +121,14 @@ def train_vae(config, trainloader, valloader):
 
             # ! Cross entropy doesn't take negative values so added 1 to each class
             target = torch.squeeze(inputs, dim=1).long()
-            output, z, logvar = vae(inputs)
-            partial_recon_loss, partial_kl, loss = vae_loss(output, target, z,
+            logits, z, logvar = vae(inputs)
+            partial_recon_loss, partial_kl, loss = vae_loss(logits, target, z,
                                     logvar, criterion,
                                     kl_weight=config.kl,)
-            output = torch.argmax(output, dim=1)
+            output = torch.argmax(logits, dim=1)
             loss.backward()
+
+            nn.utils.clip_grad_norm_(vae.parameters(), max_norm = config.weight_max_norm)
             optimizer.step()
 
             running_loss += loss.item()
@@ -141,8 +142,11 @@ def train_vae(config, trainloader, valloader):
                     if param is not None:
                         writer.add_histogram(f"grad/{name}", param.grad, global_step=epoch)
                         # print(f" [GRAD] {name} : {param.grad}")
-                        
+            writer.add_histogram(f"logits/train", logits, global_step=epoch)
 
+            probs = torch.softmax(logits, dim=1)
+            writer.add_histogram("probs_emp/train", probs[:,0,:,:,:], global_step=epoch)
+            writer.add_histogram("probs_wm/train", probs[:,1,:,:,:], global_step=epoch)
 
         running_loss = running_loss / epoch_steps
         recon_loss = recon_loss / epoch_steps
@@ -152,14 +156,8 @@ def train_vae(config, trainloader, valloader):
         # Retrieving counts of the output
         counts_output = retrieve_counts(output.unique(return_counts=True))
 
-        # Simple metric to visualise where there are non zeros
-        custom_metric = counts_output[0] * counts_output[1] * counts_output[2]
-
-        writer.add_scalar('nonZeros/train', custom_metric, epoch)
-
-        writer.add_scalar('Count_wm/train', counts_output[0], epoch)
-        writer.add_scalar('Count_empt/train', counts_output[1], epoch)
-        writer.add_scalar('Counts_sulci/train', counts_output[2], epoch)
+        writer.add_scalar('Count_empt/train', counts_output[0], epoch)
+        writer.add_scalar('Count_wm/train', counts_output[1], epoch)
 
         # Writing loss
         writer.add_scalar('Loss/train', running_loss, epoch)
@@ -188,25 +186,29 @@ def train_vae(config, trainloader, valloader):
         recon_loss_val = 0.0
         kl_val = 0.0
         val_steps = 0
-        f_loss = 0
         vae.eval()
 
         for both_split, full, path in valloader:
             with torch.no_grad():
                 inputs = both_split[:,0,:,:,:].unsqueeze(1)
                 inputs = Variable(inputs).to(device, dtype=torch.float32)
-                output, z, logvar = vae(inputs)
+                logits, z, logvar = vae(inputs)
             # ! Cross entropy doesn't take negative values so added 1 to each class
                 target = torch.squeeze(inputs, dim=1).long()
-                partial_recon_loss_val, partial_kl_val, loss = vae_loss(output, target,
+                partial_recon_loss_val, partial_kl_val, loss = vae_loss(logits, target,
                                         z, logvar, criterion,
                                         kl_weight=config.kl,)
-
-                output = torch.argmax(output, dim=1)
+                output = torch.argmax(logits, dim=1)
                 val_loss += loss.cpu().numpy()
                 recon_loss_val += partial_recon_loss_val
                 kl_val += partial_kl_val
                 val_steps += 1
+                writer.add_histogram(f"logits/val", logits, global_step=epoch)
+
+                probs = torch.softmax(logits, dim=1)
+                writer.add_histogram("probs_emp/val", probs[:,0,:,:,:], global_step=epoch)
+                writer.add_histogram("probs_wm/val", probs[:,1,:,:,:], global_step= epoch)
+
         valid_loss = val_loss / val_steps
         recon_loss_val = recon_loss_val / val_steps
         kl_val = kl_val / val_steps
@@ -214,20 +216,13 @@ def train_vae(config, trainloader, valloader):
 
         counts_output = retrieve_counts(output.unique(return_counts=True))
 
-        # Simple metric to visualise where there are non zeros
-        custom_metric = counts_output[0] * counts_output[1] * counts_output[2]
-
-        writer.add_scalar('nonZeros/val', custom_metric, epoch)
-
-        writer.add_scalar('Count_wm/val', counts_output[0], epoch)
-        writer.add_scalar('Count_empt/val', counts_output[1], epoch)
-        writer.add_scalar('Counts_sulci/val', counts_output[2], epoch)
+        writer.add_scalar('Count_empt/val', counts_output[0], epoch)
+        writer.add_scalar('Count_wm/val', counts_output[1], epoch)
 
         writer.add_scalar('Loss/val', valid_loss, epoch)
         writer.add_scalar('KL Loss/val', kl_val, epoch)
         writer.add_scalar('recon Loss/val', recon_loss_val, epoch)
 
-    
         writer.close()
 
         # prints on the terminal
@@ -239,10 +234,10 @@ def train_vae(config, trainloader, valloader):
 
         list_loss_val.append(valid_loss)
 
-        print("\n __________________ \n")
-
         # * Checking if early stopping needed
         early_stopping(valid_loss, vae)
+
+        print("\n __________________ \n")
 
         """ Saving of reconstructions for visualization in Anatomist software """
         if (epoch%10) == 0:
@@ -254,23 +249,23 @@ def train_vae(config, trainloader, valloader):
             wm_count.append(counts_output[0])
             emp_count.append(counts_output[1])
             sulci_count.append(counts_output[2])
-            if custom_metric != 0 and epoch%20==0 :
-                torch.save((vae.state_dict(), optimizer.state_dict()),
-                            SAVING_PATH / f'training_{epoch}.pt')
+            # if custom_metric != 0 and epoch%20==0 :
+            #     torch.save((vae.state_dict(), optimizer.state_dict()),
+                        # SAVING_PATH / f'training_{epoch}.pt')
+
+            for key, array in {'input': input_arr,
+                                'output' : output_arr,
+                                'phase': phase_arr,
+                                'id': id_arr,
+                                'epoch_val' : epoch_arr,
+                                'emp_count' : wm_count,
+                                'wm_count' : emp_count,
+                                }.items():
+                np.save(SAVING_PATH / key, np.array([array]))
 
         if early_stopping.early_stop or epoch == nb_epoch -1:
             break
 
-    for key, array in {'input': input_arr,
-                       'output' : output_arr,
-                        'phase': phase_arr,
-                        'id': id_arr,
-                        'epoch_val' : epoch_arr,
-                        'wm_count' : wm_count,
-                        'emp_count' : emp_count,
-                        'sulci_count' : sulci_count
-                        }.items():
-        np.save(SAVING_PATH / key, np.array([array]))
 
     final_loss_val = list_loss_val[-1:]
 
