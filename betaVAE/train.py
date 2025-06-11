@@ -45,6 +45,7 @@ from pathlib import Path
 from beta_vae import *
 from utils.pytorchtools import EarlyStopping
 
+CHECK_OUTPUT_NP = 10
 
 def retrieve_counts(torch_unique):
     # torch.Tensor.unique(return_counts= True)
@@ -174,7 +175,7 @@ def train_vae(config, trainloader, valloader):
         list_loss_train.append(running_loss)
         running_loss = 0.0
 
-        if (epoch%5) == 0:
+        if (epoch%CHECK_OUTPUT_NP) == 0:
             id_arr.append(path[0])
             phase_arr.append('train')
             input_arr.append(np.array(np.squeeze(inputs[0]).cpu().detach().numpy()))
@@ -240,7 +241,7 @@ def train_vae(config, trainloader, valloader):
         print("\n __________________ \n")
 
         """ Saving of reconstructions for visualization in Anatomist software """
-        if (epoch%10) == 0:
+        if (epoch%CHECK_OUTPUT_NP) == 0:
             id_arr.append(path[0])
             phase_arr.append('val')
             input_arr.append(np.array(np.squeeze(inputs[0]).cpu().detach().numpy()))
