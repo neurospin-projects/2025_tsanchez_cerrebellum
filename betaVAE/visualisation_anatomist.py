@@ -149,10 +149,10 @@ class VisualiserAnatomist :
         pal.setColors(colors)
         
         #Setting colors
-        pal.np["v"][100:400,:,:,:,3] = 0 # Settings middle alpha to 0
-        pal.np["v"][:100,:,:,:,2] = 255 # Settings begin to blue max
-        pal.np["v"][:100,:,:,:,1] = 255 # Settings begin to green max
-        pal.np["v"][400:,:,:,:,0] = 255 # Settings end to red max
+        pal.np["v"][:400,:,:,:,3] = 0 # Settings middle alpha to 0
+        pal.np["v"][400:,:,:,:,2] = 255 # Settings begin to blue max
+        pal.np["v"][400:,:,:,:,1] = 255 # Settings begin to green max
+        pal.np["v"][400:,:,:,:,0] = 0 # Settings end to red max
 
         return pal
     
@@ -213,27 +213,27 @@ class VisualiseExperiment :
             self.epoch_arr = np.squeeze(np.load(self.paths["training"]["epoch"]).astype(np.int16))
 
     def plot_training(self,save_full : bool):
-        anatomist = anahead.Anatomist()
-        win = anatomist.createWindow("3D")
+        anat = anahead.Anatomist()
+        win = anat.createWindow("3D")
 
         visu_inputs = [plt.imread(VisualiserAnatomist(
             path_or_obj=np_obj, 
             dict_views= DICT_VIEWS, 
-            anatomist = anatomist,
+            anatomist = anat,
             window = win
         ).save_image(path = self.visu_path / f"input_{str(ind).zfill(2)}.png", name_setting="normal")) for ind,np_obj in enumerate(self.inputs_arr)]
 
         visu_outputs = [plt.imread(VisualiserAnatomist(
             path_or_obj=np_obj, 
             dict_views= DICT_VIEWS, 
-            anatomist = anatomist,
+            anatomist = anat,
             window = win
         ).save_image(path = self.visu_path / f"output_{str(ind).zfill(2)}.png",name_setting="normal")) for ind, np_obj in enumerate(self.outputs_arr)]
 
         if save_full : 
             n_sub = len(self.id_arr)
-            n_row = n_sub // 3
-            fig, axes = plt.subplots(n_row, 6, figsize=(25, n_row*5))
+            n_row = n_sub // 4
+            fig, axes = plt.subplots(n_row, 8, figsize=(32, n_row*5))
             for ind,ax in enumerate(axes.ravel()):
                 div, mod = divmod(ind,2)
                 to_plot = visu_inputs if mod == 0 else visu_outputs
