@@ -128,7 +128,7 @@ def train_vae(config, trainloader, valloader):
             output = torch.argmax(logits, dim=1)
             loss.backward()
 
-            nn.utils.clip_grad_norm_(vae.parameters(), max_norm = config.weight_max_norm)
+            nn.utils.clip_grad_norm_(vae.parameters(), max_norm = config.gradient_max_norm)
             optimizer.step()
 
             running_loss += loss.item()
