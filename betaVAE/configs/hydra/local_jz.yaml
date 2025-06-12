@@ -10,4 +10,4 @@ hydra:
     dir: ${sweep_dir}
   sweep:
     dir: ${sweep_dir}
-    subdir: ${exp_settings}
+    subdir: ${exp_settings}_${hydra.job.num}
