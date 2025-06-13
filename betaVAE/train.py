@@ -138,16 +138,16 @@ def train_vae(config, trainloader, valloader):
             epoch_steps += 1
 
 
-            if (epoch % 1 == 0) : 
-                for name, param in vae.named_parameters():
-                    if param is not None:
-                        writer.add_histogram(f"grad/{name}", param.grad, global_step=epoch)
-                        # print(f" [GRAD] {name} : {param.grad}")
-            writer.add_histogram(f"logits/train", logits, global_step=epoch)
+        if (epoch % 1 == 0) : 
+            for name, param in vae.named_parameters():
+                if param is not None:
+                    writer.add_histogram(f"grad/{name}", param.grad, global_step=epoch)
+                    # print(f" [GRAD] {name} : {param.grad}")
+        writer.add_histogram(f"logits/train", logits, global_step=epoch)
 
-            probs = torch.softmax(logits, dim=1)
-            writer.add_histogram("probs_emp/train", probs[:,0,:,:,:], global_step=epoch)
-            writer.add_histogram("probs_wm/train", probs[:,1,:,:,:], global_step=epoch)
+        probs = torch.softmax(logits, dim=1)
+        writer.add_histogram("probs_emp/train", probs[:,0,:,:,:], global_step=epoch)
+        writer.add_histogram("probs_wm/train", probs[:,1,:,:,:], global_step=epoch)
 
         running_loss = running_loss / epoch_steps
         recon_loss = recon_loss / epoch_steps
@@ -204,11 +204,6 @@ def train_vae(config, trainloader, valloader):
                 recon_loss_val += partial_recon_loss_val
                 kl_val += partial_kl_val
                 val_steps += 1
-                writer.add_histogram(f"logits/val", logits, global_step=epoch)
-
-                probs = torch.softmax(logits, dim=1)
-                writer.add_histogram("probs_emp/val", probs[:,0,:,:,:], global_step=epoch)
-                writer.add_histogram("probs_wm/val", probs[:,1,:,:,:], global_step= epoch)
 
         valid_loss = val_loss / val_steps
         recon_loss_val = recon_loss_val / val_steps
@@ -216,6 +211,12 @@ def train_vae(config, trainloader, valloader):
 
 
         counts_output = retrieve_counts(output.unique(return_counts=True))
+
+        writer.add_histogram(f"logits/val", logits, global_step=epoch)
+
+        probs = torch.softmax(logits, dim=1)
+        writer.add_histogram("probs_emp/val", probs[:,0,:,:,:], global_step=epoch)
+        writer.add_histogram("probs_wm/val", probs[:,1,:,:,:], global_step= epoch)
 
         writer.add_scalar('Count_empt/val', counts_output[0], epoch)
         writer.add_scalar('Count_wm/val', counts_output[1], epoch)
