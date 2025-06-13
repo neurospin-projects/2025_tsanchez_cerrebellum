@@ -145,10 +145,14 @@ class VAE(nn.Module):
         """
         Initializes model parameters according to Gaussian Glorot initialization
         """
-        for module in self.modules():
+        for name, module in self.named_modules():
             if isinstance(module, nn.ConvTranspose3d) or isinstance(module, nn.Conv3d):
-                nn.init.kaiming_normal_(module.weight, nonlinearity="relu")
-                nn.init.constant_(module.bias, 0)
+                if "conv_final" in name:
+                    nn.init.kaiming_uniform_(module.weight, nonlinearity="relu")
+                    nn.init.constant_(module.bias, 0)
+                else:
+                    nn.init.kaiming_normal_(module.weight, nonlinearity="relu")
+                    nn.init.constant_(module.bias, 0)
             elif isinstance(module, nn.BatchNorm2d):
                 nn.init.constant_(module.weight, 1)
                 nn.init.constant_(module.bias, 0)
