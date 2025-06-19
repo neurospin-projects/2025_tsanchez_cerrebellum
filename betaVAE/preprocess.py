@@ -49,15 +49,20 @@ import torch
 import torchvision.transforms as transforms
 from torch.utils.data import Dataset
 
+REGEX_UKB = r'(sub-)[0-9]{7}_[a-z]*.npy'
+REGEX_ATAXIA = r'[0-9]{5,6}[A-Z]{2}_[a-z]*.npy'
+
 class DatasetPaths : 
-    def __init__(self, root_dir):
+    def __init__(self, root_dir, regex):
         self.root = root_dir
-        self._dict_files = self._get_npy_files()
+        print(f"Dataset dir : {self.root}")
+        self._dict_files = self._get_npy_files(regex)
+        print(self._dict_files)
+        self.regex = regex
     
-    def _get_npy_files(self):
-        regex = r'(sub-)[0-9]{7}_[a-z]*.npy'
+    def _get_npy_files(self, regex):
         # print(f"Regex used for numpy file scrapping : {regex}")
-        np_file_reg = re.compile(r'(sub-)[0-9]{7}_[a-z]*.npy')
+        np_file_reg = re.compile(regex)
 
         dict_files = dict()
         
@@ -88,12 +93,12 @@ class UkbDataset(Dataset) :
 
         if isinstance(config, DictConfig):
             self.root_dir = self.config.data_root
-            self.paths = DatasetPaths(self.root_dir)
+            self.paths = DatasetPaths(self.root_dir, regex=REGEX_UKB)
             self.list_subjects  = pd.Series(self.paths.list_subjects)
 
         elif isinstance(config, Dict):
             self.root_dir = self.config["root"]
-            self.paths = DatasetPaths(self.root_dir)
+            self.paths = DatasetPaths(self.root_dir, regex=REGEX_UKB)
             self.list_subjects  = pd.Series(self.paths.list_subjects)
 
     def __len__(self):
@@ -122,44 +127,48 @@ class UkbDataset(Dataset) :
 
         return split_channel_vol, volume_tensor.unsqueeze(0), subject
 
-class SkeletonDataset():
-    """Custom dataset for skeleton images that includes image file paths.
-    Args:
-        dataframe: dataframe containing training and testing arrays
-        filenames: optional, list of corresponding filenames
-    Returns:
-        tuple_with_path: tuple of type (sample, filename) with sample normalized
-                         and padded
-    """
-    def __init__(self, config, dataframe, filenames=None):
-        self.df = dataframe
+class AtaxiaDataset(Dataset) : 
+    def __init__(self, 
+                 config : DictConfig):
+
         self.config = config
-        if filenames:
-            self.filenames = filenames
-        else:
-            self.filenames = None
+        # print(self.config)
+
+        if isinstance(config, DictConfig):
+            self.root_dir = self.config.data_root
+            self.paths = DatasetPaths(self.root_dir, regex=REGEX_ATAXIA)
+            self.list_subjects  = pd.Series(self.paths.list_subjects)
+
+        elif isinstance(config, Dict):
+            self.root_dir = self.config["root"]
+            self.paths = DatasetPaths(self.root_dir, regex=REGEX_ATAXIA)
+            self.list_subjects  = pd.Series(self.paths.list_subjects)
 
     def __len__(self):
-        return len(self.df)
+        return len(self.paths)
+    
+    def __getitem__(self, index):
+        subject = self.list_subjects.iloc[index]
+        np_file = np.load(self.paths[subject])
 
-    def __getitem__(self, idx):
-        if torch.is_tensor(idx):
-            idx = idx.tolist()
+        # Remove last dimension of [x,y,z,1]
+        np_3d = np_file[:,:,:,0] # Shape [x,y,z]
 
-        if self.filenames:
-            filename = self.filenames[idx]
-            sample = np.expand_dims(np.squeeze(self.df.iloc[idx][0]), axis=0)
-        else:
-            filename = self.df.iloc[idx]['ID']
-            sample = self.df.iloc[idx][0]
+        # Fixing the shape of the tensor
+        if isinstance(self.config, DictConfig):
+            padder = Padding(self.config.in_shape[1:], nb_channels= 1, fill_value=0)
+        else : 
+            padder = Padding(self.config["in_shape"][1:], nb_channels= 1, fill_value=0)
+        clean_np = padder(np_3d)
 
-        fill_value = 0
-        self.transform = transforms.Compose([
-                                Padding(list(self.config.in_shape), fill_value=fill_value)
-                                ])
-        sample = self.transform(sample)
-        tuple_with_path = (sample, filename)
-        return tuple_with_path
+        volume_tensor = torch.from_numpy(clean_np)
+
+        # * Splitting in 2 channels 
+        white_mat_tens = torch.where(volume_tensor == -1, 1, 0)
+        sulci_tens = torch.where(volume_tensor == 1, 1, 0)
+        split_channel_vol = torch.stack([white_mat_tens, sulci_tens])
+
+        return split_channel_vol, volume_tensor.unsqueeze(0), subject
 
 
 
