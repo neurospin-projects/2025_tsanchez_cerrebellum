@@ -1,12 +1,13 @@
 **/deep_folding
 **/__pycache__/
 */**/cerebellum_folding
-Runs/*/betaVAE
 # pixi environments
 .pixi
 *.egg-info
 
 outputs/*
 **/soma-env
+
+Runs/*
 
 
