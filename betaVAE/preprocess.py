@@ -50,7 +50,7 @@ import torchvision.transforms as transforms
 from torch.utils.data import Dataset
 
 REGEX_UKB = r'(sub-)[0-9]{7}_[a-z]*.npy'
-REGEX_ATAXIA = r'[0-9]{5,6}[A-Z]{2}_[a-z]*.npy'
+REGEX_ATAXIA = r'[0-9]{5,7}[A-Z]{2}_[a-z]*.npy'
 
 class DatasetPaths : 
     def __init__(self, root_dir, regex):
