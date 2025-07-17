@@ -225,7 +225,7 @@ class PipelineSubject :
 
             path_mask = mask_path.icbm2009
 
-            for type_file in ["threshold", "resampled_icbm"]:
+            for type_file in ["threshold", "resampled_icbm", "mean_curvature"]:
 
                 if check_file(self.path.masked[type_mask][type_file]):
                     if not overwrite : 
@@ -257,7 +257,7 @@ class PipelineSubject :
         self.print(bbox_masks)
 
         for type_mask, bbox in bbox_masks.items():
-            for type_file in ["threshold", "resampled_icbm"]: 
+            for type_file in ["threshold", "resampled_icbm","mean_curvature"]: 
 
                 if check_file(self.path.cropped[type_mask][type_file]):
                     if not overwrite : 

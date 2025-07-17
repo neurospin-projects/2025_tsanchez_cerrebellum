@@ -101,10 +101,12 @@ class SubjectPath(BasePath) :
         for key in self.masked.keys():
             self.masked[key]["threshold"] = self.save / self._MASKED_FOLDER / key / f"{self.id}_masked_tresh_{key}.nii.gz"
             self.masked[key]["resampled_icbm"] = self.save / self._MASKED_FOLDER / key / f"{self.id}_masked_t1mri_{key}.nii.gz"
+            self.masked[key]["mean_curvature"] = self.save / self._MASKED_FOLDER / key / f"{self.id}_masked_mean_curvature_{key}.nii.gz"
 
         for key in self.cropped.keys():
             self.cropped[key]["threshold"] = self.save / self._CROP_FOLDER/ key / f"{self.id}_crop_tresh_{key}.nii.gz"
             self.cropped[key]["resampled_icbm"] = self.save / self._CROP_FOLDER / key / f"{self.id}_crop_t1mri_{key}.nii.gz"
+            self.cropped[key]["mean_curvature"] = self.save / self._CROP_FOLDER / key / f"{self.id}_crop_mean_curvature_{key}.nii.gz"
         
         for key in self.cropped.keys():
             self.numpy[key] = self.save / f"{self.id}_{key}.npy"
