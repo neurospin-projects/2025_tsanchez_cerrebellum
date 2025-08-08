@@ -119,10 +119,14 @@ class PipelineSubject :
         if not self.path.transform_mat :
             graph = aims.read(str(self.path.graph))
             transf = aims.GraphManip.getICBM2009cTemplateTransform(graph)
-            return transf
         else :
-            print("Transformation matrix available")
-            return None
+            if self.path.type_transform == "MNI" : 
+                transf = aims.read(str(self.path.transform_mat))
+            else : # Transform type = ACPC
+                transf_native_To_ACPC = aims.read(str(self.path.transform_mat))
+                transf_ACPC_to_ICBM2009c = aims.StandardReferentials.talairachToICBM2009cTemplate()
+                transf = transf_ACPC_to_ICBM2009c * transf_native_To_ACPC
+        return transf
     
     
     def resample(self, overwrite : bool = False):

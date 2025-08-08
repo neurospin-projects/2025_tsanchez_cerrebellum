@@ -16,6 +16,8 @@ class BasePath :
                  raw_folder : Union[str, Path],
                  tree_raw : Union[str, Path],
                  nomenclature_raw : str,
+                 transform_folder : Union[str,None],
+                 type_transform : Union[str,None],
                  ):
         """Base class for path management
 
@@ -42,6 +44,18 @@ class BasePath :
         
         self.graph = graph_folder / subject_id / tree_graph / f"R{subject_id}.arg" #Always the same structure of name
         self.raw = raw_folder / subject_id / tree_raw / f"{subject_id}{nomenclature_raw}"
+        
+        if type_transform and transform_folder: 
+            if type_transform in ["ACPC", "MNI"] :
+                self.transform_mat = transform_folder / subject_id / tree_raw / "registration" / f"RawT1-{subject_id}_default_acquisition_TO_Talairach-{type_transform}.trm"
+                if not os.path.exists(self.transform_mat) :
+                    raise ValueError(f"Object does not exist : {self.transform_mat}")
+            else :
+                raise ValueError("Transform type available : ACPC or MNI")
+        else : 
+            self.transform_mat = None
+        
+        self.type_transform = type_transform
 
         self._validate_path()
 
@@ -51,7 +65,7 @@ class BasePath :
         Raises:
             ValueError: Path does not exist
         """
-        if not os.path.exists(self.graph) :
+        if not os.path.exists(self.graph) and not self.transform_mat:
             raise ValueError(f"Object does not exist : {self.graph}")
         elif not os.path.exists(self.raw) :
             raise ValueError(f"Object does not exist : {self.raw}")
@@ -70,10 +84,11 @@ class SubjectPath(BasePath) :
                  nomenclature_raw : str,
                  masks_type : List[str],
                  saving_folder: Union[str, Path],
-                 transform_path : Union[str, Path, None] = None
+                 transform_folder : Union[str | Path, None] = None,
+                 type_transform : Union[str, None] = None, 
                  ):
         # Init the base folder
-        super().__init__(subject_id, graph_folder, tree_graph, raw_folder , tree_raw, nomenclature_raw)
+        super().__init__(subject_id, graph_folder, tree_graph, raw_folder , tree_raw, nomenclature_raw, transform_folder, type_transform)
 
         self._ICBM2009_FOLDER = "ICBM2009c"
         self._MASKED_FOLDER = "masked"
@@ -88,9 +103,6 @@ class SubjectPath(BasePath) :
         self.masked = dict([(key, dict()) for key in masks_type]) 
         self.cropped = dict([(key, dict()) for key in masks_type]) 
         self.numpy = dict([(key, dict()) for key in masks_type]) 
-
-        # If transformation matrix is available
-        self.transform_mat = transform_path
 
         # File in the ICBM2009 space (1st step of the pipeline)
         #Without skel
