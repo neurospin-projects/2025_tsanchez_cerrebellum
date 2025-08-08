@@ -51,6 +51,7 @@ from torch.utils.data import Dataset
 
 REGEX_UKB = r'(sub-)[0-9]{7}_[a-z]*.npy'
 REGEX_ATAXIA = r'[0-9]{5,7}[A-Z]{2}_[a-z]*.npy'
+REGEX_SAF1T5 = r'(?:[A-Z]{6}|AF[0-9]{3}|[0-9]{3})_[a-z]*.npy'
 
 class DatasetPaths : 
     def __init__(self, root_dir, regex):
@@ -80,25 +81,27 @@ class DatasetPaths :
     @property
     def list_subjects(self):
         return list(self._dict_files.keys())
-    
+
     def __getitem__(self, val):
         return self._dict_files[val]
 
-class UkbDataset(Dataset) : 
+
+class SkeletonDataset(Dataset) : 
     def __init__(self, 
-                 config : DictConfig):
+                 config : DictConfig,
+                 regex_sub : str):
 
         self.config = config
         # print(self.config)
 
         if isinstance(config, DictConfig):
             self.root_dir = self.config.data_root
-            self.paths = DatasetPaths(self.root_dir, regex=REGEX_UKB)
+            self.paths = DatasetPaths(self.root_dir, regex=regex_sub)
             self.list_subjects  = pd.Series(self.paths.list_subjects)
 
         elif isinstance(config, Dict):
             self.root_dir = self.config["root"]
-            self.paths = DatasetPaths(self.root_dir, regex=REGEX_UKB)
+            self.paths = DatasetPaths(self.root_dir, regex=regex_sub)
             self.list_subjects  = pd.Series(self.paths.list_subjects)
 
     def __len__(self):
@@ -126,50 +129,28 @@ class UkbDataset(Dataset) :
         split_channel_vol = torch.stack([white_mat_tens, sulci_tens])
 
         return split_channel_vol, volume_tensor.unsqueeze(0), subject
+    
+    def get_index(self, sub_id : str):
+        ind_sub = self.list_subjects[self.list_subjects == sub_id].index[0]
+        if ind_sub == None : 
+            raise ValueError("Subject doesn't exist in dataset")
+        return ind_sub
 
-class AtaxiaDataset(Dataset) : 
+class UkbDataset(SkeletonDataset) : 
     def __init__(self, 
                  config : DictConfig):
+        super().__init__(config, regex_sub=REGEX_UKB)
 
-        self.config = config
-        # print(self.config)
 
-        if isinstance(config, DictConfig):
-            self.root_dir = self.config.data_root
-            self.paths = DatasetPaths(self.root_dir, regex=REGEX_ATAXIA)
-            self.list_subjects  = pd.Series(self.paths.list_subjects)
+class AtaxiaDataset(SkeletonDataset) : 
+    def __init__(self, 
+                 config : DictConfig):
+        super().__init__(config, regex_sub=REGEX_ATAXIA)
 
-        elif isinstance(config, Dict):
-            self.root_dir = self.config["root"]
-            self.paths = DatasetPaths(self.root_dir, regex=REGEX_ATAXIA)
-            self.list_subjects  = pd.Series(self.paths.list_subjects)
-
-    def __len__(self):
-        return len(self.paths)
-    
-    def __getitem__(self, index):
-        subject = self.list_subjects.iloc[index]
-        np_file = np.load(self.paths[subject])
-
-        # Remove last dimension of [x,y,z,1]
-        np_3d = np_file[:,:,:,0] # Shape [x,y,z]
-
-        # Fixing the shape of the tensor
-        if isinstance(self.config, DictConfig):
-            padder = Padding(self.config.in_shape[1:], nb_channels= 1, fill_value=0)
-        else : 
-            padder = Padding(self.config["in_shape"][1:], nb_channels= 1, fill_value=0)
-        clean_np = padder(np_3d)
-
-        volume_tensor = torch.from_numpy(clean_np)
-
-        # * Splitting in 2 channels 
-        white_mat_tens = torch.where(volume_tensor == -1, 1, 0)
-        sulci_tens = torch.where(volume_tensor == 1, 1, 0)
-        split_channel_vol = torch.stack([white_mat_tens, sulci_tens])
-
-        return split_channel_vol, volume_tensor.unsqueeze(0), subject
-
+class SAF1T5Dataset(SkeletonDataset) : 
+    def __init__(self, 
+                 config : DictConfig):
+        super().__init__(config, regex_sub=REGEX_SAF1T5)
 
 
 class Padding(object):
