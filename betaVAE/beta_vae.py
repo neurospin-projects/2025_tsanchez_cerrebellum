@@ -40,9 +40,9 @@ import torch
 from torch.autograd import Variable
 import torch.nn as nn
 from omegaconf import DictConfig
-from backbones.basicnet import BasicNet
-from backbones.convnet import ConvNet
-from backbones.resnet import ResNet, BasicBlock
+from betaVAE.backbones.basicnet import BasicNet
+from betaVAE.backbones.convnet import ConvNet
+from betaVAE.backbones.resnet import ResNet, BasicBlock
 
 
 
@@ -166,13 +166,16 @@ class VAE(nn.Module):
         noise = Variable(torch.randn(stddev.size(), device=device))
         return (noise * stddev) + mean
 
-    def encode(self, x):
-        x = self.encoder(x)
-        x = nn.functional.normalize(x, p=2)
+    def encode(self, x, return_feat = False):
+        feat = self.encoder(x)
+        x = nn.functional.normalize(feat, p=2)
         x = x.view(x.size(0), -1)
         mean = self.z_mean(x)
         var = self.z_var(x)
-        return mean, var
+        if return_feat : 
+            return mean, var, feat
+        else : 
+            return mean, var
 
     def decode(self, z):
         out = self.z_develop(z)
