@@ -9,10 +9,15 @@ import anatomist.headless as anahead
 from betaVAE.beta_vae import VAE
 from betaVAE.preprocess import UkbDataset
 
+### Parameters for the visualisation
+
+### Slice on the middle of the vermis (for a view of the vermis in the sagittal plan)
 SLICE_CLIP = aims.Quaternion([0.6427876096865394,
   -0.3420201433256688,
   0.6427876096865394,
   0.3420201433256688])
+
+# Position of the volume
 
 VIEW_SAGITTAL = [0.5,-0.5,-0.5,0.5]
 OBLIC_VIEW = [0.6,-0.2,-0.25,0.75] 
@@ -275,63 +280,63 @@ class VisualiseExperiment :
 
         
     
-    def view_inference(self,
-                    subject : str,
-                    anatomist,
-                    plot : bool,
-                    checkpoint : bool = False
-                    ):
+    # def view_inference(self,
+    #                 subject : str,
+    #                 anatomist,
+    #                 plot : bool,
+    #                 checkpoint : bool = False
+    #                 ):
 
-        # assert subject in self.dataloader.list_subjects, "Subject not in the preprocessed sub"
-        self.dataloader = UkbDataset(config = {
-            "root" : self.root_data,
-            "in_shape" : self.vae_settings["in_shape"]
-        })
+    #     # assert subject in self.dataloader.list_subjects, "Subject not in the preprocessed sub"
+    #     self.dataloader = UkbDataset(config = {
+    #         "root" : self.root_data,
+    #         "in_shape" : self.vae_settings["in_shape"]
+    #     })
 
-        win_input = anatomist.createWindow("3D")
-        win_output = anatomist.createWindow("3D")
+    #     win_input = anatomist.createWindow("3D")
+    #     win_output = anatomist.createWindow("3D")
 
-        # if torch.cuda.is_available():
-        #     device = "cuda:0"
-        # else : 
-        #     device = "cpu"
-        device = "cpu" #! Seems that cuda doesn't work on carafon 
+    #     # if torch.cuda.is_available():
+    #     #     device = "cuda:0"
+    #     # else : 
+    #     #     device = "cpu"
+    #     device = "cpu" #! Seems that cuda doesn't work on carafon 
         
-        to_load = "checkpoint" if checkpoint else "model"
-        # Loading model
-        model = VAE(**self.vae_settings, device=device)
-        model.load_state_dict(torch.load(self.paths[to_load]))
-        model.to(device=device)
-        index_patient = list(self.dataloader.list_subjects).index(subject)
-        target = self.dataloader[index_patient]
-        output = model(target[0].to(dtype = torch.float).unsqueeze(0))
-        argmax_out = torch.argmax(output[0], dim = 1) #Retrieving only the reconstruction -> output[0]
+    #     to_load = "checkpoint" if checkpoint else "model"
+    #     # Loading model
+    #     model = VAE(**self.vae_settings, device=device)
+    #     model.load_state_dict(torch.load(self.paths[to_load]))
+    #     model.to(device=device)
+    #     index_patient = list(self.dataloader.list_subjects).index(subject)
+    #     target = self.dataloader[index_patient]
+    #     output = model(target[0].to(dtype = torch.float).unsqueeze(0))
+    #     argmax_out = torch.argmax(output[0], dim = 1) #Retrieving only the reconstruction -> output[0]
 
-        visu_input = VisualiserAnatomist(
-            path_or_obj = target[0].to(dtype = torch.int16).numpy(),
-            dict_views=DICT_VIEWS,
-            anatomist = anatomist,
-            window = win_input
-        )
+    #     visu_input = VisualiserAnatomist(
+    #         path_or_obj = target[0].to(dtype = torch.int16).numpy(),
+    #         dict_views=DICT_VIEWS,
+    #         anatomist = anatomist,
+    #         window = win_input
+    #     )
 
-        visu_output = VisualiserAnatomist(
-            path_or_obj = argmax_out.to(dtype = torch.int16).numpy() - 1,
-            dict_views=DICT_VIEWS,
-            anatomist = anatomist,
-            window = win_output
-        )
+    #     visu_output = VisualiserAnatomist(
+    #         path_or_obj = argmax_out.to(dtype = torch.int16).numpy() - 1,
+    #         dict_views=DICT_VIEWS,
+    #         anatomist = anatomist,
+    #         window = win_output
+    #     )
         
-        if plot :
-            fig, axes = plt.subplots(1,2, figsize = (8, 8))
-            axes[0,0].set_axis_off()
-            axes[0,1].set_axis_off()
-            axes[0,0].set_title(subject)
-            axes[0,0].imshow(converter_RBGA(visu_input.tensor_image("normal")), aspect="equal")
-            axes[0,1].imshow(converter_RBGA(visu_output.tensor_image("normal")), aspect="equal")
-            plt.subplots_adjust(wspace=0.01, hspace=0.05)
-            plt.show()
+    #     if plot :
+    #         fig, axes = plt.subplots(1,2, figsize = (8, 8))
+    #         axes[0,0].set_axis_off()
+    #         axes[0,1].set_axis_off()
+    #         axes[0,0].set_title(subject)
+    #         axes[0,0].imshow(converter_RBGA(visu_input.tensor_image("normal")), aspect="equal")
+    #         axes[0,1].imshow(converter_RBGA(visu_output.tensor_image("normal")), aspect="equal")
+    #         plt.subplots_adjust(wspace=0.01, hspace=0.05)
+    #         plt.show()
         
-        else :
-            visu_input.show(buffer=False, view_settings=DICT_VIEWS["normal"])
-            visu_output.show(buffer=False, view_settings=DICT_VIEWS["normal"])
+    #     else :
+    #         visu_input.show(buffer=False, view_settings=DICT_VIEWS["normal"])
+    #         visu_output.show(buffer=False, view_settings=DICT_VIEWS["normal"])
 

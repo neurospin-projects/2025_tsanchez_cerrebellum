@@ -1,7 +1,7 @@
 from pathlib import Path
 import pandas as pd
-from cerebellum_folding.data.preprocess import PipelineSubject
-from cerebellum_folding.data.path import MergedMaskPath
+from cerebellum_folding.preprocess import PipelineSubject
+from cerebellum_folding.path import MergedMaskPath
 from cerebellum_folding import UkbSubject
 from joblib import Parallel, delayed
 from tqdm import tqdm

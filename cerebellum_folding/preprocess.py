@@ -1,10 +1,7 @@
 """Library for the preprocessing pipeline"""
-# TODO Remove dilatation print 
-# TODO Add a tqdm like thing to see the execution of the pipeline
-# TODO If numpy of interest exists -> Don't run pipeline
 # TODO Add logging 
 
-from cerebellum_folding.data.path import SubjectPath, MaskPath, check_file
+from cerebellum_folding.path import SubjectPath, MaskPath, check_file
 
 import deep_folding.brainvisa.utils.dilate_mask as dl 
 from deep_folding.brainvisa.utils.resample import resample
@@ -25,6 +22,16 @@ class PipelineSubject :
                  resample_output_voxel : List[int], 
                  verbose : bool = False,
                 ):
+        """Pipeline oject to run the pipeline on a specific subject
+
+        Args:
+            subject_path (SubjectPath): path of the files of the subject
+            masks_path (Dict[str, MaskPath]): path of the masks used in the pipeline
+            white_matter_threshold (float): threshold used to retrieve white matter values after the computation of mean curvature
+            sulci_threshold (float): threshold used to retrieve sulci values after the computation of mean curvature
+            resample_output_voxel (List[int]): dimension of voxels after registering / resampling
+            verbose (bool, optional): prints outputs. Defaults to False.
+        """
         # Retrieving paths of the subject
         self.path = subject_path
         self.id = self.path.id

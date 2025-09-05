@@ -1,1 +1,1 @@
-from cerebellum_folding.data import AtaxiaSubject, UkbSubject, ABCDSubject
+from cerebellum_folding.build import AtaxiaSubject, UkbSubject, ABCDSubject

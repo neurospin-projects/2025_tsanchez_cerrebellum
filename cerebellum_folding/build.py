@@ -1,6 +1,8 @@
+"""Building SubjectPath objects specific to each dataset"""
+
 from pathlib import Path
 from typing import List, Union
-from cerebellum_folding.data.path import SubjectPath
+from cerebellum_folding.path import SubjectPath
 
 ### Paths
 

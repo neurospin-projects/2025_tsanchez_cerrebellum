@@ -6,6 +6,14 @@ from typing import Union, List
 import os
 
 def check_file(path : Path):
+    """Check if a file exists
+
+    Args:
+        path (Path): Path of the file
+
+    Returns:
+        bool: True if file exists, False otherwise
+    """
     return (os.path.exists(path) and os.path.isfile(path))
 
 class BasePath :
@@ -35,8 +43,12 @@ class BasePath :
             nomenclature_raw (str): Nomenclature of the subject raw file -> The file name has this structure at the end `<subject_id><nomenclature>`
             e.g. 199133_raw.nii.gz will have this features : 
             - subject_id = 199133
-            - nomenclature_raw = "_raw.nii.gz"
-        """
+            - nomenclature_raw = "_raw.nii.gz"    
+
+            transform_folder(Union[str,None]) : Folder containing the transform file (.trm)
+
+            type_transform (Union[str,None]) : Type of transform (Talairach, icbm, ...)
+        """                                       
         
         self.id = subject_id
         self.folders = {"raw" : Path(raw_folder),
@@ -87,6 +99,28 @@ class SubjectPath(BasePath) :
                  transform_folder : Union[str | Path, None] = None,
                  type_transform : Union[str, None] = None, 
                  ):
+        """Individual class that contains / create all the required paths for a subject
+
+        Args:
+            subject_id (str): Id of the subject in the different databases
+
+            graph_folder (Union[str, Path]): Folder containing the subject folder (with the graph file)
+
+            tree_graph (Union[str, Path]): Path to the folder containing the graph file relative to the subject folder
+
+            raw_folder (Union[str, Path]): Folder containing the raw subject files
+
+            tree_raw (Union[str, Path]): Folder containing the subject folder (with the raw file)
+
+            nomenclature_raw (str): Nomenclature of the subject raw file -> The file name has this structure at the end `<subject_id><nomenclature>`
+            e.g. 199133_raw.nii.gz will have this features : 
+            - subject_id = 199133
+            - nomenclature_raw = "_raw.nii.gz"    
+
+            transform_folder(Union[str,None]) : Folder containing the transform file (.trm)
+
+            type_transform (Union[str,None]) : Type of transform (Talairach, icbm, ...)
+        """
         # Init the base folder
         super().__init__(subject_id, graph_folder, tree_graph, raw_folder , tree_raw, nomenclature_raw, transform_folder, type_transform)
 
